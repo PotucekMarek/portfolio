@@ -1,0 +1,123 @@
+---
+import { Image } from 'astro:assets';
+
+interface Props {
+  image: ImageMetadata;
+  alt: string;
+  index: number; // Přidáme index pro kaskádovou animaci
+}
+
+const { image, alt, index } = Astro.props;
+---
+
+<button 
+  class="gallery-item animate-fade-up" 
+  data-full-src={image.src}
+  style={`--item-index: ${index};`}
+>
+  <div class="image-wrapper">
+    <Image 
+      src={image} 
+      alt={alt} 
+      width={800} 
+      format="webp" 
+      class="photo" 
+    />
+    <div class="overlay glass-effect">
+      <span class="view-text">Full screen</span>
+    </div>
+  </div>
+</button>
+
+<style>
+  .gallery-item {
+    margin-bottom: var(--spacing);
+    break-inside: avoid;
+    background: none;
+    border: none;
+    padding: 0;
+    width: 100%;
+    cursor: zoom-in;
+    text-align: left;
+    position: relative;
+  }
+
+  .image-wrapper {
+    position: relative;
+    border-radius: 12px; /* Jemnější zaoblení */
+    overflow: hidden; /* Důležité: ořízne fotku i overlay přesně podle rámečku */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    transition: transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1), 
+                box-shadow 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+
+  .photo {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.7s cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+
+  /* --- Nové: Skleněný překryv (Overlay) --- */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 50%);
+    opacity: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: 2rem;
+    transition: opacity 0.4s ease;
+  }
+
+  .glass-effect {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .view-text {
+    color: white;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transform: translateY(20px);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+
+  /* Efekty při najetí myší */
+  .gallery-item:hover .image-wrapper,
+  .gallery-item:focus .image-wrapper {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+  }
+
+  .gallery-item:hover .photo,
+  .gallery-item:focus .photo {
+    transform: scale(1.05); /* Jemný zoom samotné fotky */
+  }
+
+  .gallery-item:hover .overlay,
+  .gallery-item:focus .overlay {
+    opacity: 1;
+  }
+
+  .gallery-item:hover .view-text,
+  .gallery-item:focus .view-text {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* Animace při načtení stránky */
+  .animate-fade-up {
+    opacity: 0;
+    transform: translateY(40px);
+    animation: fadeUpItem 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    /* Fotky naskáčou postupně díky vynásobení indexu */
+    animation-delay: calc(var(--item-index) * 0.1s + 0.2s); 
+  }
+
+  @keyframes fadeUpItem {
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>

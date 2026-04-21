@@ -1,0 +1,65 @@
+---
+import Layout from '../layouts/Layout.astro';
+import GalleryItem from '../pages/gallery.astro';
+
+// Magie! Tento řádek načte všechny fotky ze složky naráz
+const images = import.meta.glob<{ default: ImageMetadata }>('../assets/gallery/*.{jpeg,jpg,png,webp}', { eager: true });
+
+// Převedení objektu na jednoduché pole (array), abychom přes něj mohli iterovat (map)
+const imageList = Object.values(images).map(module => module.default);
+---
+
+<Layout title="My photos | Portfolio">
+  <header class="header">
+    <h1>Galerry</h1>
+    <p>My photos</p>
+  </header>
+
+  <section class="masonry-grid">
+    {imageList.map((img, index) => (
+      <GalleryItem image={img} alt={`Photography ${index + 1}`} />
+    ))}
+  </section>
+</Layout>
+
+<style>
+  .header {
+    text-align: center;
+    margin: 4rem 0 6rem 0;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .header p {
+    color: var(--accent-color);
+    margin-top: 1rem;
+    font-size: 1.1rem;
+  }
+
+  /* Čisté CSS řešení pro Masonry (cihlovou) mřížku */
+  .masonry-grid {
+    column-count: 1;
+    column-gap: var(--spacing);
+    padding: 0 var(--spacing);
+    width: 100%;
+  }
+
+  /* Na tabletu 2 sloupce */
+  @media (min-width: 768px) {
+    .masonry-grid {
+      column-count: 2;
+    }
+  }
+
+  /* Na velkých monitorech (Mac, PC) 3 sloupce */
+  @media (min-width: 1200px) {
+    .masonry-grid {
+      column-count: 3;
+    }
+  }
+</style>

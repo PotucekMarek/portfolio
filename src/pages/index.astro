@@ -1,17 +1,301 @@
 ---
-
+import Layout from '../layouts/Layout.astro';
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout title="Marek | Photographer & Developer">
+  <div class="bg-grid"></div>
+
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <section class="hero-section">
+    <div class="hero-content">
+      <h1 class="animate-slide-up" style="--delay: 0.1s">
+        Hi, <br/>I'm <span class="text-gradient">Marek.</span>
+      </h1>
+      
+      <p class="subtitle animate-slide-up" style="--delay: 0.3s">
+        Capturing moments, crafting code, and heading East.
+      </p>
+      
+      <div class="text-block animate-slide-up" style="--delay: 0.4s">
+        <p>
+          Welcome to my digital space. Photography is my way of communicating with the world. 
+          Whether I'm looking for extraordinary stories in the everyday streets of Europe, or 
+          finding inspiration in the dynamic and bustling environment of Shanghai.
+        </p>
+        <p>
+          This website is my playground. A place where my passion for photography meets my 
+          newly discovered love for frontend development.
+        </p>
+      </div>
+      
+      <div class="cta-group animate-slide-up" style="--delay: 0.6s">
+        <a href="/gallery" class="btn-primary">View Gallery</a>
+        <a href="mailto:your@email.com" class="btn-secondary">Get in Touch</a>
+      </div>
+    </div>
+
+    <div class="hero-image-wrapper animate-fade-in floating" style="--delay: 0.8s">
+      <div class="image-placeholder glass-effect">
+        <span>Your elegant profile<br>picture goes here</span>
+      </div>
+    </div>
+
+    <div class="scroll-indicator animate-fade-in" style="--delay: 1.2s">
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  /* --- Nové: Subtilní mřížka v pozadí --- */
+  .bg-grid {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    background-size: 40px 40px;
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+  }
+
+  .ambient-glow {
+    position: absolute;
+    width: 40vw;
+    height: 40vw;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.12;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  .glow-1 {
+    top: -10%;
+    left: -10%;
+    background: #4a90e2; 
+  }
+
+  .glow-2 {
+    bottom: 10%;
+    right: -10%;
+    background: #e24a4a; 
+  }
+
+  .hero-section {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 4rem;
+    align-items: center;
+    min-height: 85vh;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-bottom: 4rem;
+  }
+
+  @media (min-width: 900px) {
+    .hero-section {
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 6rem;
+    }
+  }
+
+  h1 {
+    font-size: clamp(3rem, 6vw, 5rem);
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+    font-weight: 300;
+    color: var(--text-color);
+  }
+
+  .text-gradient {
+    background: linear-gradient(to right, #fff, #777, #fff);
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: shine 4s linear infinite;
+  }
+
+  @keyframes shine {
+    to { background-position: 200% center; }
+  }
+
+  .subtitle {
+    font-size: 1.5rem;
+    color: var(--text-color);
+    font-weight: 400;
+    margin-bottom: 2rem;
+    opacity: 0.7;
+    letter-spacing: 0.02em;
+  }
+
+  /* --- Nové: Zvýrazňující linie textu --- */
+  .text-block {
+    position: relative;
+    padding-left: 1.5rem;
+  }
+
+  .text-block::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(to bottom, var(--text-color), transparent);
+    opacity: 0.3;
+    transform-origin: top;
+    animation: growLine 1.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: 0.8s;
+    transform: scaleY(0);
+  }
+
+  @keyframes growLine {
+    to { transform: scaleY(1); }
+  }
+
+  .text-block p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #999;
+    margin-bottom: 1.5rem;
+  }
+
+  .cta-group {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 3rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary, .btn-secondary {
+    padding: 1rem 2.5rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
+
+  .btn-primary {
+    background: #fff;
+    color: #000;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(255,255,255,0.15);
+  }
+
+  .btn-secondary {
+    background: rgba(255,255,255,0.03);
+    color: var(--text-color);
+    border: 1px solid rgba(255,255,255,0.1);
+    backdrop-filter: blur(5px);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.3);
+  }
+
+  .hero-image-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/5;
+  }
+
+  .floating {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+    100% { transform: translateY(0px); }
+  }
+
+  /* --- Nové: Světelný odlesk (Shimmer) --- */
+  .glass-effect {
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: #666;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .glass-effect::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(to bottom right, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%);
+    transform: rotate(30deg) translateY(-100%);
+    animation: shimmer 5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { transform: rotate(30deg) translateY(-100%); }
+    20%, 100% { transform: rotate(30deg) translateY(100%); }
+  }
+
+  .scroll-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1px;
+    height: 60px;
+    background: rgba(255,255,255,0.1);
+    overflow: hidden;
+  }
+
+  .scroll-line {
+    width: 100%;
+    height: 100%;
+    background: var(--text-color);
+    animation: scrollDown 2s cubic-bezier(0.77, 0, 0.175, 1) infinite;
+  }
+
+  @keyframes scrollDown {
+    0% { transform: translateY(-100%); }
+    50% { transform: translateY(0); }
+    100% { transform: translateY(100%); }
+  }
+
+  .animate-slide-up {
+    opacity: 0;
+    transform: translateY(30px);
+    animation: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation-delay: var(--delay, 0s);
+  }
+
+  .animate-fade-in {
+    opacity: 0;
+    animation: fadeIn 1.2s ease-out forwards;
+    animation-delay: var(--delay, 0s);
+  }
+
+  @keyframes slideUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+</style>

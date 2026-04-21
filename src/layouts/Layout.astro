@@ -1,0 +1,100 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import Navigation from '../components/Navigation.astro';
+import Lightbox from '../components/Lightbox.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { 
+  title, 
+  description = "Professional photography portfolio and gallery built with Astro" 
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="/og-image.jpg" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <ClientRouter />
+  </head>
+  <body>
+    <Navigation />
+    
+    <main class="content-wrapper">
+      <slot />
+    </main>
+    
+    <Lightbox />
+
+    <style is:global>
+      :root {
+        --bg-color: #0a0a0a;
+        --text-color: #ededed;
+        --accent-color: #ffffff;
+        --secondary-color: #555555;
+        --spacing: 2rem;
+      }
+
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: system-ui, -apple-system, sans-serif;
+        scroll-behavior: smooth;
+      }
+
+      body {
+        min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .content-wrapper {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: var(--spacing);
+      }
+
+      /* Custom Scrollbar for a premium feel */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: var(--bg-color);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #222;
+        border-radius: 10px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #333;
+      }
+
+      /* Base Typography */
+      h1, h2, h3 {
+        color: var(--accent-color);
+        font-weight: 300;
+        letter-spacing: -0.02em;
+      }
+    </style>
+  </body>
+</html>
