@@ -1,12 +1,58 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import GalleryItem from '../components/GalleryItem.astro';
-
+import SchemaGallery from '../components/SchemaGallery.astro';
+// 1. Načtení všech fotek z tvé složky
 const images = import.meta.glob<{ default: ImageMetadata }>('../assets/gallery/*.{jpeg,jpg,png,webp}', { eager: true });
-const imageList = Object.values(images).map(module => module.default);
+
+// 2. Slovník pro SEO a přístupnost (A11y). 
+// Tady jsou anglické alt texty pro všechny tvé fotky. Můžeš je kdykoliv upravit.
+const imageMetadata: Record<string, { alt: string }> = {
+  'circulation-abstract': { alt: 'Abstract play of light and shadows resembling circulation' },
+  'couple-evening': { alt: 'Silhouette of a couple standing together in evening light' },
+  'couple-shadow': { alt: 'High contrast shadow of a couple cast on a textured surface' },
+  'dark_luxury_whisper': { alt: 'Close-up of elegant details in a dark, moody luxury setting' },
+  'delicate-comfort-touch': { alt: 'Soft focus image of a gentle hand touch on comforting fabric' },
+  'hand-touch': { alt: 'Close-up of two hands gently touching' },
+  'healing-silence': { alt: 'Minimalist composition evoking a sense of calm and healing' },
+  'kiss-mood': { alt: 'Atmospheric and moody shot of a couple about to kiss' },
+  'medical-art-vibration': { alt: 'Artistic representation of medical elements with a vibrating motion blur' },
+  'mirror-gaze-intensity': { alt: 'Intense portrait of a person gazing directly into a mirror' },
+  'reflection-mirror': { alt: 'Creative composition utilizing a mirror reflection in a room' },
+  'remote-control-power': { alt: 'Abstract shot focusing on a hand holding a remote control' },
+  'ritual-of-purity-soap': { alt: 'Close-up of water and soap signifying a cleansing ritual' },
+  'shower-ritual': { alt: 'Moody and atmospheric shot of water falling in a shower' },
+  'silk-touch': { alt: 'Extreme close-up of fingers gently pressing into smooth silk' },
+  'storage-silk-pouch': { alt: 'Still life photo of a delicate silk pouch on a dark surface' },
+  'text-message': { alt: 'Close-up of hands typing a text message on a smartphone screen' },
+  'visual-distance-tension': { alt: 'Two subjects positioned far apart creating a visual tension' },
+  'warmth-and-texture': { alt: 'Warmly lit close-up highlighting the texture of a surface' },
+  'water-flow-cleansing': { alt: 'Dynamic shot of clear water flowing smoothly' },
+  'wellness-prescription': { alt: 'Still life of wellness and care items arranged neatly' },
+  'whisper-ear': { alt: 'Close-up portrait of one person whispering into another\'s ear' },
+  'whispers-dinner': { alt: 'Candid shot of people conversing intimately at a dinner table' }
+};
+
+// 3. Propojení fotek ze složky s jejich alt textem
+const imageList = Object.entries(images).map(([path, module]) => {
+  // Získá čistý název souboru (např. 'kiss-mood') bez koncovky a bez cesty
+  const fileName = path.split('/').pop()?.replace(/\.(jpeg|jpg|png|webp)$/i, '') || '';
+  
+  // Pokud náhodou přidáš novou fotku a zapomeneš ji dopsat do slovníku nahoře,
+  // tento fallback jí automaticky vygeneruje alt text z jejího názvu.
+  const meta = imageMetadata[fileName] || { 
+    alt: `Photograph titled ${fileName.replace(/[-_]/g, ' ')}` 
+  };
+
+  return {
+    src: module.default,
+    alt: meta.alt,
+  };
+});
 ---
 
-<Layout title="Gallery | Marek">
+<Layout title="Gallery | Marek Potuček">
+    <SchemaGallery images={imageList} />
   <div class="bg-grid"></div>
   <div class="ambient-glow glow-1"></div>
 
@@ -19,15 +65,18 @@ const imageList = Object.values(images).map(module => module.default);
 
   <section class="masonry-grid">
     {imageList.map((img, index) => (
-      <GalleryItem image={img} alt={`Fotografie ${index + 1}`} index={index} />
+      <!-- Nyní posíláme do GalleryItem správný, smysluplný alt text! -->
+      <GalleryItem image={img.src} alt={img.alt} index={index} />
     ))}
   </section>
+
+  
 </Layout>
 
 <style>
   /* Znovupoužití mřížky a záře pro vizuální konzistenci */
   .bg-grid {
-    position: fixed; /* Fixed, aby mřížka scrollovala s námi */
+    position: fixed;
     inset: 0;
     z-index: -2;
     background-size: 40px 40px;
@@ -85,33 +134,19 @@ const imageList = Object.values(images).map(module => module.default);
     column-gap: var(--spacing);
     padding: 0 var(--spacing) 4rem var(--spacing);
     width: 100%;
-    max-width: 1800px; /* Zvětšeno pro majestátnější pocit na velkých monitorech */
+    max-width: 1800px;
     margin: 0 auto;
   }
 
-  @media (min-width: 768px) {
-    .masonry-grid {
-      column-count: 2;
-    }
-  }
+  @media (min-width: 768px) { .masonry-grid { column-count: 2; } }
+  @media (min-width: 1200px) { .masonry-grid { column-count: 3; } }
 
-  @media (min-width: 1200px) {
-    .masonry-grid {
-      column-count: 3;
-    }
-  }
-
-  /* Animace hlavičky */
   .animate-fade-in {
     opacity: 0;
     transform: translateY(20px);
     animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
-  @keyframes fadeIn {
-    to { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes shine {
-    to { background-position: 200% center; }
-  }
+  @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+  @keyframes shine { to { background-position: 200% center; } }
 </style>

@@ -6,11 +6,14 @@ const currentPath = Astro.url.pathname;
   <div class="nav-container">
     <a href="/" class={currentPath === '/' ? 'active' : ''}>About me</a>
     <a href="/gallery" class={currentPath === '/gallery' ? 'active' : ''}>Gallery</a>
+    <button id="downloadBtn" class="download-btn">
+      <span id="btnText">Download PDF</span>
+      <span id="btnLoader" class="loader" style="display: none;">⏳</span>
+    </button>
   </div>
 </nav>
 
 <style>
-  /* Zbytek stylů zůstává naprosto stejný jako předtím */
   .main-nav {
     padding: 2rem var(--spacing);
     display: flex;
@@ -24,6 +27,7 @@ const currentPath = Astro.url.pathname;
     padding: 0.5rem 1.5rem;
     border-radius: 50px;
     backdrop-filter: blur(10px);
+    align-items: center; /* Vycentruje položky vertikálně */
   }
 
   a {
@@ -44,4 +48,77 @@ const currentPath = Astro.url.pathname;
     color: white;
     text-shadow: 0 0 10px rgba(255,255,255,0.3);
   }
+
+  /* Styly pro nové tlačítko */
+  .download-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.1rem;
+    font-weight: 500;
+    opacity: 0.6;
+    cursor: pointer;
+    transition: opacity 0.3s ease, color 0.3s ease;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0;
+  }
+
+  .download-btn:hover {
+    opacity: 1;
+    color: white;
+  }
+
+  .download-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
+
+  .loader {
+    animation: spin 2s linear infinite;
+  }
+
+  @keyframes spin {
+    100% { transform: rotate(360deg); }
+  }
 </style>
+
+<script>
+  // Explicitně TS řekneme, že 'btn' je tlačítko
+  const btn = document.getElementById('downloadBtn') as HTMLButtonElement;
+  const btnText = document.getElementById('btnText');
+  const btnLoader = document.getElementById('btnLoader');
+
+  if (btn && btnText && btnLoader) {
+    btn.addEventListener('click', async () => {
+      // TypeScript už teď ví, že btn je tlačítko, takže nevyhodí chybu
+      btn.disabled = true;
+      btnText.innerText = 'Stahuji letáky...';
+      btnLoader.style.display = 'inline-block';
+
+      try {
+        const response = await fetch('/api/download');
+        if (!response.ok) throw new Error('API chyba');
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `letaky_${new Date().toISOString().slice(0, 10)}.zip`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        alert('Chyba stahování. Otevři terminál/konzoli pro detaily.');
+        console.error(error);
+      } finally {
+        btn.disabled = false;
+        btnText.innerText = 'Download PDF';
+        btnLoader.style.display = 'none';
+      }
+    });
+  }
+</script>

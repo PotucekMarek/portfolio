@@ -1,0 +1,26 @@
+---
+// src/components/SchemaGallery.astro
+interface Props {
+  // Očekáváme pole objektů, kde každý má src (Astro ImageMetadata) a alt text
+  images: { src: { src: string }, alt: string }[];
+}
+
+const { images } = Astro.props;
+
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "Photography Portfolio | Marek Potuček",
+  "url": new URL(Astro.url.pathname, Astro.site || "https://www.marekpotucek.com/").toString(),
+  "mainEntity": {
+    "@type": "ImageGallery",
+    "image": images.map(img => ({
+      "@type": "ImageObject",
+      "contentUrl": new URL(img.src.src, Astro.site || "https://www.marekpotucek.com/").toString(),
+      "caption": img.alt
+    }))
+  }
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(schema)} />

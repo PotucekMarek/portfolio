@@ -1,10 +1,23 @@
 ---
+// src/components/Lightbox.astro
 ---
 
-<div id="lightbox" class="lightbox" aria-hidden="true" role="dialog">
-  <button id="lightbox-close" class="close-btn" aria-label="Close gallery">&times;</button>
+<!-- ARIA atributy dělají z modalu oficiální "dialog" pro prohlížeče -->
+<div 
+  id="lightbox" 
+  class="lightbox" 
+  role="dialog" 
+  aria-modal="true" 
+  aria-label="Image gallery fullscreen view"
+>
+  <button id="lightbox-close" class="lightbox-btn close-btn" aria-label="Close gallery">&times;</button>
+  
+  <!-- Tlačítka pro listování -->
+  <button id="lightbox-prev" class="lightbox-btn nav-btn prev-btn" aria-label="Previous image">&#10094;</button>
+  <button id="lightbox-next" class="lightbox-btn nav-btn next-btn" aria-label="Next image">&#10095;</button>
+
   <div class="lightbox-container">
-    <img id="lightbox-img" src="" alt="" />
+    <img id="lightbox-img" src="" alt="Full screen photograph" />
   </div>
 </div>
 
@@ -12,14 +25,14 @@
   .lightbox {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.98);
+    background: rgba(0, 0, 0, 0.95);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 9999;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.3s ease;
     backdrop-filter: blur(10px);
   }
 
@@ -32,7 +45,7 @@
     width: 100%;
     height: 100%;
     display: flex;
-    padding: 2rem;
+    padding: 3rem;
     justify-content: center;
     align-items: center;
   }
@@ -41,77 +54,169 @@
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    border-radius: 2px;
-    box-shadow: 0 0 50px rgba(0,0,0,0.5);
-    transform: scale(0.95);
-    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border-radius: 4px;
+    box-shadow: 0 0 40px rgba(0,0,0,0.6);
+    /* Jemná animace při změně fotky */
+    transition: opacity 0.2s ease, transform 0.2s ease;
   }
 
-  .lightbox.active #lightbox-img {
-    transform: scale(1);
+  /* --- Společné styly pro ovládací tlačítka --- */
+  .lightbox-btn {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    cursor: pointer;
+    z-index: 10000;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    backdrop-filter: blur(5px);
+  }
+
+  .lightbox-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
   }
 
   .close-btn {
-    position: absolute;
-    top: 2rem;
-    right: 2rem;
-    background: none;
-    border: none;
-    color: white;
-    font-size: 3rem;
+    top: 1.5rem;
+    right: 1.5rem;
+    width: 50px;
+    height: 50px;
+    font-size: 2rem;
     line-height: 1;
-    cursor: pointer;
-    z-index: 10000;
-    transition: transform 0.2s ease;
   }
 
-  .close-btn:hover {
-    transform: scale(1.1);
+  .nav-btn {
+    top: 50%;
+    transform: translateY(-50%);
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+
+  .nav-btn:hover {
+    transform: translateY(-50%) scale(1.1);
+  }
+
+  .prev-btn { left: 1.5rem; }
+  .next-btn { right: 1.5rem; }
+
+  @media (max-width: 768px) {
+    .nav-btn { width: 45px; height: 45px; }
+    .prev-btn { left: 0.5rem; }
+    .next-btn { right: 0.5rem; }
+    .lightbox-container { padding: 1rem; }
   }
 </style>
 
 <script>
-  // Funkce obalená v eventu pro podporu View Transitions
-  const initLightbox = () => {
+  document.addEventListener('astro:page-load', () => {
     const lightbox = document.getElementById('lightbox');
     const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement;
     const closeBtn = document.getElementById('lightbox-close');
+    const prevBtn = document.getElementById('lightbox-prev');
+    const nextBtn = document.getElementById('lightbox-next');
     const galleryItems = document.querySelectorAll('.gallery-item');
 
-    const openLightbox = (src: string) => {
-      if (!lightbox || !lightboxImg) return;
-      lightboxImg.src = src;
+    // Pole pro uchování URL adres všech zobrazených fotek
+    let imagesList: string[] = [];
+    let currentIndex = 0;
+    // Slouží pro návrat focusu po zavření
+    let lastFocusedElement: HTMLElement | null = null;
+
+    if (!lightbox || !lightboxImg || galleryItems.length === 0) return;
+
+    // Naplnění pole s fotkami (vezmeme jen ty, které zrovna nejsou vyfiltrované)
+    const updateImagesList = () => {
+      imagesList = [];
+      galleryItems.forEach(item => {
+        // Zpracováváme jen fotky, které nejsou aktuálně skryté filtrem (display: none)
+        if ((item as HTMLElement).style.display !== 'none') {
+           const src = item.getAttribute('data-full-src');
+           if (src) imagesList.push(src);
+        }
+      });
+    };
+
+    // Funkce pro aktualizaci obrázku s jemnou animací
+    const updateImageDisplay = (index: number) => {
+      lightboxImg.style.opacity = '0';
+      lightboxImg.style.transform = 'scale(0.98)';
+      
+      setTimeout(() => {
+        lightboxImg.src = imagesList[index];
+        lightboxImg.style.opacity = '1';
+        lightboxImg.style.transform = 'scale(1)';
+      }, 150); // Krátká prodleva pro fade-out efekt
+    };
+
+    const openLightbox = (index: number, triggerElement: HTMLElement) => {
+      updateImagesList();
+      lastFocusedElement = triggerElement;
+      currentIndex = index;
+      
+      updateImageDisplay(currentIndex);
       lightbox.classList.add('active');
-      document.body.style.overflow = 'hidden'; // Zamezí scrollování pod lightboxem
+      
+      // UX & A11y: Zamknutí scrollu na pozadí
+      document.body.style.overflow = 'hidden';
+      // Přepnutí focusu do modalu (na tlačítko zavřít)
+      closeBtn?.focus(); 
     };
 
     const closeLightbox = () => {
-      if (!lightbox || !lightboxImg) return;
       lightbox.classList.remove('active');
-      document.body.style.overflow = '';
-      setTimeout(() => { lightboxImg.src = ''; }, 400);
+      document.body.style.overflow = ''; // Odemknutí scrollu
+      
+      setTimeout(() => { lightboxImg.src = ''; }, 300);
+      
+      // A11y: Vrácení focusu na fotku, na kterou uživatel kliknul
+      if (lastFocusedElement) {
+        lastFocusedElement.focus();
+      }
     };
 
-    galleryItems.forEach(item => {
-      item.addEventListener('click', () => {
-        const fullSrc = item.getAttribute('data-full-src');
-        if (fullSrc) openLightbox(fullSrc);
+    const nextImage = (e?: Event) => {
+      if (e) e.stopPropagation();
+      currentIndex = (currentIndex + 1) % imagesList.length;
+      updateImageDisplay(currentIndex);
+    };
+
+    const prevImage = (e?: Event) => {
+      if (e) e.stopPropagation();
+      currentIndex = (currentIndex - 1 + imagesList.length) % imagesList.length;
+      updateImageDisplay(currentIndex);
+    };
+
+    // Event Listenery
+    galleryItems.forEach((item, index) => {
+      item.addEventListener('click', (e) => {
+        openLightbox(index, e.currentTarget as HTMLElement);
       });
     });
 
     closeBtn?.addEventListener('click', closeLightbox);
-    
-    lightbox?.addEventListener('click', (e) => {
-      if (e.target === e.currentTarget || (e.target as HTMLElement).classList.contains('lightbox-container')) {
+    nextBtn?.addEventListener('click', nextImage);
+    prevBtn?.addEventListener('click', prevImage);
+
+    // Zavření při kliknutí mimo fotku
+    lightbox.addEventListener('click', (e) => {
+      if (e.target === lightbox || (e.target as HTMLElement).classList.contains('lightbox-container')) {
         closeLightbox();
       }
     });
 
+    // Klávesové zkratky
     document.addEventListener('keydown', (e) => {
+      if (!lightbox.classList.contains('active')) return;
+      
       if (e.key === 'Escape') closeLightbox();
+      if (e.key === 'ArrowRight') nextImage();
+      if (e.key === 'ArrowLeft') prevImage();
     });
-  };
-
-  // Klíčové pro Astro: Spustí skript při prvním načtení i při každém plynulém přechodu
-  document.addEventListener('astro:page-load', initLightbox);
+  });
 </script>

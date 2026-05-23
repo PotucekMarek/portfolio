@@ -2,31 +2,27 @@
 import { ClientRouter } from 'astro:transitions';
 import Navigation from '../components/Navigation.astro';
 import Lightbox from '../components/Lightbox.astro';
+import SEO from '../components/SEO.astro'; // <--- Nový import SEO komponenty
 
 interface Props {
   title: string;
   description?: string;
+  image?: string; // <--- Přidáno pro možnost vlastního OG obrázku na podstránkách
 }
 
 const { 
   title, 
-  description = "Professional photography portfolio and gallery built with Astro" 
+  description = "Marek Potuček is a photographer and frontend developer. Explore the fine art portfolio capturing moments from everyday European streets to dynamic Shanghai.", 
+  image 
 } = Astro.props;
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
+    <!-- Zde voláme SEO komponentu, která vygeneruje veškeré meta tagy, Open Graph, atd. -->
+    <SEO title={title} description={description} image={image} />
     
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
-    <meta property="og:image" content="/og-image.jpg" />
-
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     

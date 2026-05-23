@@ -12,8 +12,10 @@ const { image, alt, index } = Astro.props;
 
 <button 
   class="gallery-item animate-fade-up" 
-  data-full-src={image.src}
+  data-full-src={typeof image === 'string' ? image : image.src}
+  data-index={index}
   style={`--item-index: ${index};`}
+  aria-label={`View full size of: ${alt}`}
 >
   <div class="image-wrapper">
     <Image 
