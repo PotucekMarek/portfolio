@@ -7,7 +7,9 @@ from playwright.async_api import async_playwright
 
 async def main():
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    slozky_nazev = os.path.join(dir_path, "letaky") 
+    
+    # 1. Složka pro dočasné stažení jednotlivých PDF letáků
+    slozky_nazev = os.path.join(dir_path, "letaky_temp") 
     os.makedirs(slozky_nazev, exist_ok=True)
     
     dnes = datetime.now().strftime("%Y-%m-%d")
@@ -96,10 +98,15 @@ async def main():
         await context.close()
         await browser.close()
 
-    # ZABALENÍ A ÚKLID (Vytvoří letaky_archiv.zip a složku vymaže)
-    shutil.make_archive("letaky_archiv", 'zip', slozky_nazev)
+    # ZABALENÍ A ÚKLID
+    # ZIP se generuje do kořenové složky projektu (přímo pod absent-atmosphere/letaky.zip)
+    # Odsud ho v dalším kroku vyzvedne Bash skript přes wrangler r2
+    zip_cesta = os.path.join(dir_path, "letaky")
+    shutil.make_archive(zip_cesta, 'zip', slozky_nazev)
+    
+    # Smazání dočasné složky s PDF soubory
     shutil.rmtree(slozky_nazev)
-    print("📦 Hotovo. Vše zabaleno do ZIPu a uklizeno.")
+    print(f"📦 Hotovo. Vše zabaleno do souboru {zip_cesta}.zip a dočasná složka byla uklizena.")
 
 if __name__ == "__main__":
     asyncio.run(main())
