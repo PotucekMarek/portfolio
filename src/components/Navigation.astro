@@ -6,6 +6,8 @@ const currentPath = Astro.url.pathname;
   <div class="nav-container">
     <a href="/" class={currentPath === '/' ? 'active' : ''}>About me</a>
     <a href="/gallery" class={currentPath === '/gallery' ? 'active' : ''}>Gallery</a>
+    <a href="/poker-timer" class={currentPath === '/poker-timer' ? 'active' : ''}>Poker Timer</a>
+    
     <button id="downloadBtn" class="download-btn">
       <span id="btnText">Download PDF</span>
       <span id="btnLoader" class="loader" style="display: none;">⏳</span>

@@ -1,0 +1,930 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Poker Timer">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+
+  <div class="poker-timer-app">
+    <div id="loader">
+      <img src="/chip.png" alt="Loading..." />
+    </div>
+
+    <div class="icon-wrapper top-left"><i class="bi bi-suit-heart big-icon"></i></div>
+    <div class="icon-wrapper top-right"><i class="bi bi-suit-diamond big-icon"></i></div>
+    <div class="icon-wrapper bottom-left"><i class="bi bi-suit-club big-icon"></i></div>
+    <div class="icon-wrapper bottom-right"><i class="bi bi-suit-spade big-icon"></i></div>
+
+    <div id="saveMessage" class="alert alert-success d-none" role="alert">✅ Successufuly saved.</div>
+
+    <div id="main-content">
+      <div id="clock">00:00</div>
+      <div id="blinds">
+        <div id="blinds-combined">100 / 200</div>
+        <div id="ante">Ante: 200</div>
+      </div>
+    </div>
+
+    <div id="progressBarContainer">
+      <div id="progressBar"></div>
+    </div>
+
+    <i id="openForm" class="bi bi-gear-fill icon-button settings-button" title="Nastavení"></i>
+    <i id="playPauseToggle" class="bi bi-play-circle-fill icon-button pause-button" title="Spustit (mezerník)"></i>
+
+    <div class="modal fade" id="blindForm" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content text-white bg-dark">
+          <div class="modal-header border-0 flex-wrap flex-md-nowrap justify-content-between align-items-center">
+            <div class="d-flex flex-column flex-md-row align-items-start gap-2">
+              <h1 class="modal-title mb-0">Set your rounds</h1>
+              <p id="roundCountDisplay" class="mb-0">Total rounds created: 12</p>
+            </div>
+          
+            <div class="d-flex align-items-center gap-3 mt-3 mt-md-0">
+              <button id="saveBlinds" type="button" class="btn btn-outline-light save-icon-btn" title="Uložit změny">
+                <i class="bi bi-save-fill"></i>
+              </button>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Zavřít"></button>
+            </div>
+          </div>
+
+          <div class="modal-body overflow-auto">
+            <form id="blindFormElement">
+              <div class="container">
+                <div class="row g-4">
+                  <div class="col-12 col-md-6" id="rounds-container"></div>
+                </div>
+              
+                <div class="mb-4 mt-4">
+                  <label class="form-label">Set time for all rounds</label>
+                  <div class="input-group">
+                    <input type="number" id="globalTimeInput" class="form-control text-center" min="1" value="10" />
+                    <button id="applyGlobalTimeBtn" type="button" class="btn btn-outline-primary">Use for all</button>
+                  </div>
+                </div>
+              </div>
+            </form>
+
+            <footer id="bottom-controls" class="d-none">
+              <button id="addRoundBtn" type="button" class="btn btn-outline-success">
+                ➕ Add a new round
+              </button>
+              <button id="addPauseBtn" type="button" class="btn btn-outline-warning">
+                ⏸️ Add a pause
+              </button>
+            </footer>
+          </div>  
+        </div>
+      </div>
+    </div> 
+
+    <audio id="transitionSound" src="/sounds/honk.mp3" preload="auto"></audio>
+    <div id="flashOverlay"></div>
+  </div>
+  
+  <script is:inline src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</Layout>
+
+<script>
+  // === GLOBÁLNÍ PROMĚNNÉ ===
+  declare const bootstrap: any;
+  let timerInterval: number | undefined;
+  let currentRound = 0;
+  let roundSecondsLeft = 600; // 10 minut
+  let totalRoundSeconds = 600;
+  let isTimerRunning = false;
+
+  // === TIMER FUNKCE ===
+  function formatTime(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+  }
+
+  function updateProgressBar() {
+    const progressBar = document.getElementById("progressBar") as HTMLDivElement | null;
+    if (!progressBar || totalRoundSeconds <= 0) return;
+
+    const percent = Math.max(0, (roundSecondsLeft / totalRoundSeconds) * 100);
+    progressBar.style.width = `${percent}%`;
+
+    progressBar.classList.remove("bg-success", "bg-warning", "bg-danger");
+
+    if (percent > 66) {
+      progressBar.classList.add("bg-success");
+    } else if (percent > 33) {
+      progressBar.classList.add("bg-warning");
+    } else {
+      progressBar.classList.add("bg-danger");
+    }
+  }
+
+  function startTimer() {
+    const clock = document.getElementById("clock");
+    const playPauseBtn = document.getElementById("playPauseToggle");
+
+    isTimerRunning = true;
+    playPauseBtn?.classList.replace("bi-play-circle-fill", "bi-pause-circle-fill");
+    playPauseBtn?.setAttribute("title", "Pozastavit (mezerník)");
+
+    timerInterval = window.setInterval(() => {
+      if (roundSecondsLeft <= 0) {
+        advanceToNextRound();
+        return;
+      }
+      roundSecondsLeft--;
+      if (clock) clock.textContent = formatTime(roundSecondsLeft);
+      updateProgressBar();
+    }, 1000);
+  }
+
+  function stopTimer() {
+    const playPauseBtn = document.getElementById("playPauseToggle");
+    isTimerRunning = false;
+    clearInterval(timerInterval);
+
+    playPauseBtn?.classList.replace("bi-pause-circle-fill", "bi-play-circle-fill");
+    playPauseBtn?.setAttribute("title", "Spustit (mezerník)");
+
+    const progressBar = document.getElementById("progressBar") as HTMLDivElement | null;
+    if (progressBar) {
+      progressBar.classList.remove("bg-success", "bg-warning", "bg-danger");
+      progressBar.classList.add("bg-primary");
+    }
+  }
+
+  function toggleTimer() {
+    if (!isTimerRunning) {
+      if (roundSecondsLeft <= 0) {
+        setRound(currentRound);
+      }
+      startTimer();
+    } else {
+      stopTimer();
+    }
+  }
+
+  function advanceToNextRound() {
+    const rounds = document.querySelectorAll("#rounds-container .round-row");
+    if (currentRound >= rounds.length) {
+      stopTimer();
+      console.log("Konec kol.");
+      return;
+    }
+    currentRound++;
+    setRound(currentRound);
+  }
+
+  function setRoundSeconds(seconds: number) {
+    roundSecondsLeft = seconds;
+    totalRoundSeconds = seconds;
+  }
+
+  // === BLINDS FUNKCE ===
+  function createStandardRound(i: number) {
+    const container = document.getElementById("rounds-container");
+    if (!container) return;
+
+    const row = document.createElement("div");
+    row.className = "round-row mb-4";
+
+    const smallBlindValue = i * 100;
+    const bigBlindValue = smallBlindValue * 2;
+    const defaultTime = 10;
+
+    row.innerHTML = `
+      <div class="round-column">
+        <label class="form-label">Round ${i} – Small Blind</label>
+        <div class="input-group">
+          <button class="btn btn-outline-light" type="button" onclick="window.adjustBlind('small${i}', -100)">-100</button>
+          <input type="number" class="form-control text-center" id="small${i}" step="100" min="0" value="${smallBlindValue}" />
+          <button class="btn btn-outline-light" type="button" onclick="window.adjustBlind('small${i}', 100)">+100</button>
+        </div>
+      </div>
+      <div class="round-column">
+        <label class="form-label">Big Blind</label>
+        <div class="input-group">
+          <button class="btn btn-outline-light" type="button" onclick="window.adjustBlind('big${i}', -100)">-100</button>
+          <input type="number" class="form-control text-center" id="big${i}" step="100" min="0" value="${bigBlindValue}" />
+          <button class="btn btn-outline-light" type="button" onclick="window.adjustBlind('big${i}', 100)">+100</button>
+        </div>
+      </div>
+      <div class="round-column">
+        <label class="form-label">Time (minutes)</label>
+        <div class="input-group">
+          <input type="number" class="form-control text-center" id="time${i}" min="1" value="${defaultTime}" />
+          <button type="button" class="btn btn-outline-danger ms-2" onclick="this.closest('.round-row')?.remove(); window.reindexRounds(); window.updateRoundCountDisplay();">
+            🗑️
+          </button>
+        </div>
+      </div>
+    `;
+    container.appendChild(row);
+  }
+
+  function createPauseRound() {
+    const container = document.getElementById("rounds-container");
+    if (!container) return;
+
+    const pauseRow = document.createElement("div");
+    pauseRow.className = "round-row mb-4";
+    pauseRow.setAttribute("data-pause", "true");
+    const pauseId = `pause${Date.now()}`;
+
+    pauseRow.innerHTML = `
+      <div class="round-column">
+        <label class="form-label">Pause</label>
+      </div>
+      <div class="round-column"></div>
+      <div class="round-column">
+        <label class="form-label">Čas (minuty)</label>
+        <div class="input-group">
+          <input type="number" class="form-control text-center" id="${pauseId}" min="1" value="10" />
+          <button type="button" class="btn btn-outline-danger ms-2" onclick="this.closest('.round-row')?.remove(); window.reindexRounds(); window.updateRoundCountDisplay();">
+            🗑️
+          </button>
+        </div>
+      </div>
+    `;
+    container.appendChild(pauseRow);
+  }
+
+  function createBlindRounds() {
+    const container = document.getElementById("rounds-container");
+    if (!container) return;
+    container.innerHTML = "";
+
+    for (let i = 1; i <= 15; i++) {
+      createStandardRound(i);
+      if (i === 6 || i === 12) {
+        createPauseRound();
+      }
+    }
+    updateRoundCountDisplay();
+  }
+
+  function addNewRound() {
+    const rounds = document.querySelectorAll("#rounds-container .round-row").length;
+    createStandardRound(rounds + 1);
+    reindexRounds();
+    updateRoundCountDisplay();
+  }
+
+  function addNewPause() {
+    createPauseRound();
+    reindexRounds();
+    updateRoundCountDisplay();
+  }
+
+  function applyGlobalTime() {
+    const globalInput = document.getElementById("globalTimeInput") as HTMLInputElement | null;
+    if (!globalInput) return;
+    const minutes = Number(globalInput.value);
+    const inputs = document.querySelectorAll("#rounds-container input[id^=time]");
+    inputs.forEach((input) => {
+      (input as HTMLInputElement).value = minutes.toString();
+    });
+  }
+
+  function reindexRounds() {
+    const rows = document.querySelectorAll("#rounds-container .round-row");
+    let roundNumber = 1;
+
+    rows.forEach(row => {
+      const isPause = row.hasAttribute("data-pause");
+      if (!isPause) {
+        const label = row.querySelector(".round-column label");
+        if (label) {
+          label.textContent = `Round ${roundNumber} – Small Blind`;
+          roundNumber++;
+        }
+      }
+    });
+    updateRoundCountDisplay();
+  }
+
+  function setRound(index: number) {
+    const rounds = document.querySelectorAll("#rounds-container .round-row");
+    const round = rounds[index];
+    if (!round) return;
+
+    const isPause = round.hasAttribute("data-pause");
+    const blindsCombined = document.getElementById("blinds-combined");
+    const anteDisplay = document.getElementById("ante");
+
+    let seconds = 600;
+
+    if (isPause) {
+      if (blindsCombined) blindsCombined.textContent = "Pause";
+      if (anteDisplay) anteDisplay.textContent = "";
+
+      const pauseInput = round.querySelector("input[type=number]") as HTMLInputElement;
+      seconds = (Number(pauseInput?.value) || 10) * 60;
+    } else {
+      const smallBlind = round.querySelector("input[id^='small']") as HTMLInputElement;
+      const bigBlind = round.querySelector("input[id^='big']") as HTMLInputElement;
+      const timeInput = round.querySelector("input[id^='time']") as HTMLInputElement;
+
+      if (smallBlind && bigBlind && blindsCombined) {
+        blindsCombined.textContent = `${smallBlind.value} / ${bigBlind.value}`;
+      }
+      if (anteDisplay && bigBlind) {
+        anteDisplay.textContent = `Ante: ${bigBlind.value}`;
+      }
+
+      seconds = (Number(timeInput?.value) || 10) * 60;
+    }
+    setRoundSeconds(seconds);
+  }
+
+  function updateRoundCountDisplay() {
+    const display = document.getElementById("roundCountDisplay");
+    if (!display) return;
+    const allRounds = document.querySelectorAll("#rounds-container .round-row");
+    let count = 0;
+    allRounds.forEach(row => {
+      if (!row.hasAttribute("data-pause")) count++;
+    });
+    display.textContent = `Total rounds created: ${count}`;
+  }
+
+  // === MODAL A HELPERS ===
+// === MODAL A HELPERS ===
+  function openForm() {
+    const modalElement = document.getElementById("blindForm");
+    // Voláme objekt přes window, aby Astro a TypeScript neprotestovaly
+    if (modalElement && (window as any).bootstrap) {
+      new (window as any).bootstrap.Modal(modalElement).show();
+    }
+  }
+
+  function saveBlinds() {
+    const roundElements = document.querySelectorAll("#rounds-container .round-row");
+    if (roundElements.length === 0) return;
+
+    setRound(0);
+
+    const clockElement = document.getElementById("clock");
+    if (clockElement) {
+      clockElement.textContent = formatTime(roundSecondsLeft);
+    }
+
+    showSaveMessage();
+
+    const modal = document.getElementById("blindForm");
+    if (modal && (window as any).bootstrap) {
+      (window as any).bootstrap.Modal.getInstance(modal)?.hide();
+    }
+  }
+
+  function showSaveMessage() {
+    const message = document.getElementById("saveMessage");
+    if (!message) return;
+    message.classList.remove("d-none");
+    message.style.opacity = "1";
+    setTimeout(() => {
+      message.style.opacity = "0";
+      setTimeout(() => message.classList.add("d-none"), 300);
+    }, 3000);
+  }
+
+  function initLoader() {
+    setTimeout(() => {
+      document.querySelector('.poker-timer-app')?.classList.add("loaded");
+      const loader = document.getElementById('loader');
+      if (loader) {
+        loader.style.opacity = '0';
+        loader.style.visibility = 'hidden';
+      }
+    }, 500);
+  }
+
+  // Připojení funkcí na window objekt, protože se volají přímo z HTML (onclick)
+  (window as any).adjustBlind = (inputId: string, change: number) => {
+    const input = document.getElementById(inputId) as HTMLInputElement | null;
+    if (input) {
+      const current = Number(input.value) || 0;
+      input.value = Math.max(0, current + change).toString();
+    }
+  };
+  (window as any).reindexRounds = reindexRounds;
+  (window as any).updateRoundCountDisplay = updateRoundCountDisplay;
+
+  // === INICIALIZACE ===
+  initLoader();
+  createBlindRounds();
+
+  const openFormBtn = document.getElementById("openForm");
+  const saveBlindsBtn = document.getElementById("saveBlinds");
+  const applyGlobalTimeBtn = document.getElementById("applyGlobalTimeBtn");
+  const playPauseToggle = document.getElementById("playPauseToggle");
+  const addRoundBtn = document.getElementById("addRoundBtn");
+  const addPauseBtn = document.getElementById("addPauseBtn");
+  const blindForm = document.getElementById("blindForm");
+  const bottomControls = document.getElementById("bottom-controls");
+
+  openFormBtn?.addEventListener("click", openForm);
+  saveBlindsBtn?.addEventListener("click", saveBlinds);
+  applyGlobalTimeBtn?.addEventListener("click", applyGlobalTime);
+  playPauseToggle?.addEventListener("click", toggleTimer);
+  addRoundBtn?.addEventListener("click", addNewRound);
+  addPauseBtn?.addEventListener("click", addNewPause);
+
+  if (blindForm && bottomControls) {
+    blindForm.addEventListener("show.bs.modal", () => {
+      bottomControls.classList.remove("d-none");
+    });
+    blindForm.addEventListener("hide.bs.modal", () => {
+      bottomControls.classList.add("d-none");
+    });
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if (e.code === "Space") {
+      e.preventDefault();
+      toggleTimer();
+    }
+  });
+
+  const clockElement = document.getElementById("clock");
+  if (clockElement) clockElement.textContent = "10:00";
+</script>
+
+<style is:global>
+  /* === ZÁKLADNÍ ROZVRŽENÍ === */
+  html, body {
+    background-color: #1a1a1a !important;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .poker-timer-app {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    min-height: 100vh;
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* === NAVIGACE === */
+  .main-nav {
+    position: relative;
+    z-index: 9999 !important;
+    pointer-events: none !important;
+  }
+  
+  .nav-container {
+    pointer-events: auto !important;
+  }
+
+  /* === HLAVNÍ OBSAH (HODINY A BLINDY) === */
+  #main-content {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    margin-top: 15vh;
+    z-index: 10;
+  }
+
+  #clock {
+    font-size: 18vw;
+    text-align: center;
+    color: #fafafa;
+    line-height: 1; 
+  }
+
+  #blinds {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 5vw;
+    font-size: 4vw;
+    font-weight: 500;
+    text-align: center;
+    color: #dddddd;
+    flex-wrap: wrap;
+  }
+
+  #blinds-combined,
+  #ante {
+    font-size: inherit;
+  }
+
+  /* === TLAČÍTKA A OVLÁDÁNÍ === */
+  .icon-button {
+    font-size: 4vw;
+    cursor: pointer;
+    position: absolute;
+    transition: transform 0.2s ease, color 0.2s ease;
+    color: #888;
+    z-index: 100;
+  }
+
+  .icon-button:hover {
+    transform: scale(1.2);
+    color: #00bcd4;
+  }
+
+  .settings-button {
+    top: 2vh;
+    right: 2vw;
+  }
+
+  /* Opravené Play/Pause tlačítko - plynule pod progress barem */
+  .pause-button {
+    position: relative; 
+    margin-top: 4vh; 
+    font-size: 5rem; 
+    color: white;
+    z-index: 100;
+    transition: transform 0.2s ease, color 0.2s ease;
+    cursor: pointer;
+  }
+
+  .pause-button:hover {
+    transform: scale(1.1);
+  }
+
+  #progressBarContainer {
+    width: 90%;
+    max-width: 1200px;
+    height: clamp(6px, 1vw, 12px);
+    background-color: #333;
+    border-radius: 5px;
+    margin-top: 1rem;
+    overflow: hidden;
+    align-self: center;
+    z-index: 10;
+  }
+
+  #progressBar {
+    height: 100%;
+    background-color: #0d6efd;
+    width: 100%;
+    transition: width 1s linear;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  }
+
+  /* === IKONY V POZADÍ === */
+  .icon-wrapper {
+    position: fixed;
+    font-size: 18vw;
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .icon-wrapper i { color: white; }
+  .top-left { top: -5vw; left: -5vw; transform: rotate(-20deg); }
+  .top-right { top: -5vw; right: -5vw; transform: rotate(15deg); }
+  .bottom-left { bottom: -5vw; left: -5vw; transform: rotate(10deg); }
+  .bottom-right { bottom: -5vw; right: -5vw; transform: rotate(-10deg); }
+
+  /* === BOOTSTRAP MODAL A JEHO OPRAVY === */
+  .modal-backdrop {
+    z-index: 10000 !important;
+  }
+  
+  .modal {
+    z-index: 10001 !important;
+  }
+
+  .modal-content {
+    border-radius: 0.5rem;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+    background-color: #111;
+    color: white;
+    border: none;
+  }
+
+  .modal-header { 
+    background-color: black; 
+    gap: 2rem;
+  }
+
+  .header-actions {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+  }
+
+  .modal-body {
+    background-color: black;
+    color: white;
+    padding: 5rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .modal-content input {
+    background-color: #222;
+    color: white;
+    border: 1px solid #444;
+  }
+
+  .modal-content input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
+  }
+
+  .modal-content .btn-close {
+    font-size: 2.4rem;
+    position: fixed;
+    top: 1rem;
+    right: 3rem;
+    filter: invert(1);
+    padding: 1rem;
+  }
+
+  #bottom-controls {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    z-index: 1050;
+    border-top: 1px solid #444;
+    backdrop-filter: blur(6px);
+  }
+
+  /* === ROUND INPUTY === */
+  .round-row {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 3rem;
+    padding-bottom: 2rem;
+  }
+
+  .round-row:not(:first-child) {
+    border-top: 3px dashed rgba(255, 255, 255, 0.3);
+    width: 100%;
+    padding-top: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .round-column {
+    font-size: 25px;
+    flex: 1 1 30%;
+    min-width: 280px;
+    max-width: 300px;
+  }
+
+  #rounds-container { width: 100%; }
+
+  .input-group {
+    flex-wrap: nowrap;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .input-group .form-control {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .save-icon-btn {
+    position: fixed;
+    top: 1rem;
+    right: 9rem;
+    transition: transform 0.2s ease, background-color 0.3s ease;
+    font-size: clamp(1.5rem, 2vw, 2rem);
+    padding: 0.2rem 0.55rem;
+    border-radius: 0.5rem;
+    z-index: 1000;
+  }
+
+  .save-icon-btn:hover {
+    transform: scale(1.15);
+    background-color: #0d6efd;
+    color: white;
+    border-color: #0d6efd;
+  }
+
+  .modal-title {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-right: 4rem;
+  }
+
+  #roundCountDisplay {
+    font-size: 1.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+  }
+
+  /* === EFEKTY A LOADER === */
+  #flashOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: red;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .flash-blink {
+    animation: flashScreen 1s ease-in-out 3;
+  }
+
+  @keyframes flashScreen {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 0.4; }
+  }
+
+  #saveMessage {
+    position: fixed;
+    top: 5vh;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1rem;
+    background-color: #198754;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    color: white;
+    z-index: 1055;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  input[type=number]::-webkit-inner-spin-button,
+  input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  input[type=number] {
+    -moz-appearance: textfield;
+  }
+
+  #loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+  }
+
+  .poker-timer-app.loaded #loader {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  #loader img {
+    width: 100px;
+    height: 100px;
+    animation: spin 1.5s linear infinite, pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  @keyframes pulse { 0%, 100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.15) rotate(180deg); } }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 1024px) {
+    .save-icon-btn {
+      position: fixed;
+      top: 1.5rem;
+      right: 7.5rem;
+    }
+
+    .header-actions {
+      top: 0.5rem;
+      right: 0.5rem;
+    }
+
+    .round-row {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+      padding: 1rem 0;
+    }
+
+    .round-column {
+      width: 100%;
+      max-width: none;
+      min-width: auto;
+      text-align: center;
+    }
+    
+    .round-column .input-group input {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .modal-body {
+      padding: 1rem;
+      padding-bottom: 180px; 
+    }
+
+    .modal-title, #roundCountDisplay {
+      font-size: 1.2rem;
+      text-align: center;
+      width: 100%;
+    }
+
+    #bottom-controls {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 3rem 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      z-index: 1050;
+      border-top: 1px solid #444;
+      backdrop-filter: blur(6px);
+    }
+
+    #bottom-controls button {
+      font-size: clamp(1.2rem, 2.5vw, 1.2rem);
+      max-width: 250px;
+      flex: 1 1 auto;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .icon-button { font-size: 4vw; }
+    
+    #blinds {
+      flex-direction: column;
+      font-size: 6vw;
+      gap: 0.5rem;
+    }
+
+    #clock {
+      font-size: 20vw;
+      margin-top: 4vh;
+    }
+
+    .round-row {
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .round-column {
+      width: 100%;
+      max-width: none;
+      text-align: center;
+    }
+
+    .modal-body {
+      padding: 1rem;
+      padding-bottom: 180px;
+    }
+
+    /* NOVÉ: Velké plovoucí tlačítko v pravém rohu pro mobily */
+    .pause-button {
+      position: fixed !important;
+      bottom: 4vh !important;
+      right: 6vw !important;
+      left: auto !important;
+      transform: none !important;
+      font-size: 6.5rem !important; /* Pořádně velké pro snadný zásah palcem */
+      z-index: 9999 !important; /* Nad vším kromě otevřeného modalu */
+      text-shadow: 0 0 15px rgba(0, 0, 0, 0.7); /* Lepší viditelnost na tmavém pozadí */
+    }
+
+    .pause-button:hover {
+      transform: scale(1.1) !important;
+    }
+  }
+</style>
