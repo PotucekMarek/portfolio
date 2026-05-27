@@ -2,44 +2,24 @@
 import Layout from '../layouts/Layout.astro';
 import GalleryItem from '../components/GalleryItem.astro';
 import SchemaGallery from '../components/SchemaGallery.astro';
-// 1. Načtení všech fotek z tvé složky
+
 const images = import.meta.glob<{ default: ImageMetadata }>('../assets/gallery/*.{jpeg,jpg,png,webp}', { eager: true });
 
-// 2. Slovník pro SEO a přístupnost (A11y). 
-// Tady jsou anglické alt texty pro všechny tvé fotky. Můžeš je kdykoliv upravit.
 const imageMetadata: Record<string, { alt: string }> = {
-  'circulation-abstract': { alt: 'Abstract play of light and shadows resembling circulation' },
-  'couple-evening': { alt: 'Silhouette of a couple standing together in evening light' },
-  'couple-shadow': { alt: 'High contrast shadow of a couple cast on a textured surface' },
-  'dark_luxury_whisper': { alt: 'Close-up of elegant details in a dark, moody luxury setting' },
-  'delicate-comfort-touch': { alt: 'Soft focus image of a gentle hand touch on comforting fabric' },
-  'hand-touch': { alt: 'Close-up of two hands gently touching' },
-  'healing-silence': { alt: 'Minimalist composition evoking a sense of calm and healing' },
-  'kiss-mood': { alt: 'Atmospheric and moody shot of a couple about to kiss' },
-  'medical-art-vibration': { alt: 'Artistic representation of medical elements with a vibrating motion blur' },
-  'mirror-gaze-intensity': { alt: 'Intense portrait of a person gazing directly into a mirror' },
-  'reflection-mirror': { alt: 'Creative composition utilizing a mirror reflection in a room' },
-  'remote-control-power': { alt: 'Abstract shot focusing on a hand holding a remote control' },
-  'ritual-of-purity-soap': { alt: 'Close-up of water and soap signifying a cleansing ritual' },
-  'shower-ritual': { alt: 'Moody and atmospheric shot of water falling in a shower' },
-  'silk-touch': { alt: 'Extreme close-up of fingers gently pressing into smooth silk' },
-  'storage-silk-pouch': { alt: 'Still life photo of a delicate silk pouch on a dark surface' },
-  'text-message': { alt: 'Close-up of hands typing a text message on a smartphone screen' },
-  'visual-distance-tension': { alt: 'Two subjects positioned far apart creating a visual tension' },
-  'warmth-and-texture': { alt: 'Warmly lit close-up highlighting the texture of a surface' },
-  'water-flow-cleansing': { alt: 'Dynamic shot of clear water flowing smoothly' },
-  'wellness-prescription': { alt: 'Still life of wellness and care items arranged neatly' },
-  'whisper-ear': { alt: 'Close-up portrait of one person whispering into another\'s ear' },
-  'whispers-dinner': { alt: 'Candid shot of people conversing intimately at a dinner table' }
+  'PXL_20250928_084411182.PORTRAIT': { alt: 'Hungary trip with girlfriend' },
+  'PXL_20250928_112819180.PORTRAIT': { alt: 'Me with girlfriend in Budapest' },
+  'PXL_20250928_134521057': { alt: 'Portrait of my gf in Budapest' },
+  'PXL_20251002_120447663': { alt: 'Girlfriend in zoo with goat' },
+  'PXL_20251014_145141427.PORTRAIT~2': { alt: 'My fat friend Kuba with cat'},
+  'PXL_20251018_195201805.PORTRAIT~2': { alt: 'My friend Vojta with Kajinek in Casino in Olomouc' },
+  'PXL_20251026_073022640': { alt: 'Saving lobsters' },
+  'PXL_20250714_105820798~2.jpg': { alt: 'View from my office' }
+
 };
 
-// 3. Propojení fotek ze složky s jejich alt textem
 const imageList = Object.entries(images).map(([path, module]) => {
-  // Získá čistý název souboru (např. 'kiss-mood') bez koncovky a bez cesty
   const fileName = path.split('/').pop()?.replace(/\.(jpeg|jpg|png|webp)$/i, '') || '';
   
-  // Pokud náhodou přidáš novou fotku a zapomeneš ji dopsat do slovníku nahoře,
-  // tento fallback jí automaticky vygeneruje alt text z jejího názvu.
   const meta = imageMetadata[fileName] || { 
     alt: `Photograph titled ${fileName.replace(/[-_]/g, ' ')}` 
   };
@@ -52,7 +32,7 @@ const imageList = Object.entries(images).map(([path, module]) => {
 ---
 
 <Layout title="Gallery | Marek Potuček">
-    <SchemaGallery images={imageList} />
+  <SchemaGallery images={imageList} />
   <div class="bg-grid"></div>
   <div class="ambient-glow glow-1"></div>
 
@@ -65,16 +45,13 @@ const imageList = Object.entries(images).map(([path, module]) => {
 
   <section class="masonry-grid">
     {imageList.map((img, index) => (
-      <!-- Nyní posíláme do GalleryItem správný, smysluplný alt text! -->
       <GalleryItem image={img.src} alt={img.alt} index={index} />
     ))}
   </section>
-
-  
 </Layout>
 
 <style>
-  /* Znovupoužití mřížky a záře pro vizuální konzistenci */
+
   .bg-grid {
     position: fixed;
     inset: 0;
