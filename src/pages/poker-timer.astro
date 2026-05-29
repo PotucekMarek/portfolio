@@ -1495,12 +1495,22 @@ import Layout from '../layouts/Layout.astro';
     .round-row {
       flex-direction: column;
       align-items: center;
-      gap: 1.5rem;
-      padding: 1.25rem 0;
+      justify-content: flex-start;   /* zruší space-between na svislé ose */
+      flex-wrap: nowrap;
+      gap: 1rem;
+      padding: 1rem 0;
       width: 100%;
+      margin-bottom: 0 !important;   /* přepíše Bootstrap mb-4 */
+    }
+
+    /* Menší a konzistentní mezera mezi koly */
+    .round-row:not(:first-child) {
+      margin-top: 1rem;
+      padding-top: 1rem;
     }
 
     .round-column {
+      flex: 0 0 auto;        /* KLÍČ: basis 220px nesmí působit na výšku */
       width: 100%;
       max-width: 360px;
       display: flex;
@@ -1533,10 +1543,41 @@ import Layout from '../layouts/Layout.astro';
 
     .modal-body { padding-bottom: 150px; }
 
-    .modal-title, #roundCountDisplay {
-      font-size: 1.2rem;
-      text-align: center;
+    /* Logičtější hlavička: nadpis vlevo, X v rohu, Save přes celou šířku */
+    .modal-header {
+      position: relative;
+      gap: 0.75rem !important;
+      padding: 1rem 1rem 1.25rem;
+      align-items: stretch !important;
+    }
+
+    .modal-header .btn-close {
+      position: absolute;
+      top: 0.9rem;
+      right: 0.9rem;
+      margin: 0;
+      z-index: 2;
+    }
+
+    .modal-title {
+      font-size: 1.4rem;
+      text-align: left;
       width: 100%;
+      padding-right: 2.5rem;   /* místo pro křížek */
+    }
+
+    #roundCountDisplay { font-size: 1.05rem; }
+
+    /* Pravá skupina (Save + X) na celou šířku – X je teď absolutně v rohu */
+    .modal-header > .d-flex:last-child {
+      width: 100%;
+      gap: 0 !important;
+      margin-top: 0.25rem !important;
+    }
+
+    #saveBlinds {
+      width: 100%;
+      justify-content: center;
     }
 
     #bottom-controls {
