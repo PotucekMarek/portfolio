@@ -24,3 +24,5 @@ pnpm-debug.log*
 .idea/
 
 letaky.zip
+.wrangler/
+.env
