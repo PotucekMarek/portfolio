@@ -9,168 +9,325 @@ import Layout from '../layouts/Layout.astro';
 
   <div class="poker-timer-app">
     <div id="loader">
-      <img src="/chip.png" alt="Loading..." />
+      <img src="/chip.png" alt="" />
     </div>
 
-    <div class="icon-wrapper top-left"><i class="bi bi-suit-heart big-icon"></i></div>
-    <div class="icon-wrapper top-right"><i class="bi bi-suit-diamond big-icon"></i></div>
-    <div class="icon-wrapper bottom-left"><i class="bi bi-suit-club big-icon"></i></div>
-    <div class="icon-wrapper bottom-right"><i class="bi bi-suit-spade big-icon"></i></div>
+    <div class="icon-wrapper top-left" aria-hidden="true"><i class="bi bi-suit-heart big-icon"></i></div>
+    <div class="icon-wrapper top-right" aria-hidden="true"><i class="bi bi-suit-diamond big-icon"></i></div>
+    <div class="icon-wrapper bottom-left" aria-hidden="true"><i class="bi bi-suit-club big-icon"></i></div>
+    <div class="icon-wrapper bottom-right" aria-hidden="true"><i class="bi bi-suit-spade big-icon"></i></div>
 
-    <div id="saveMessage" class="alert alert-success d-none" role="alert">✅ Successufuly saved.</div>
+    <div id="saveMessage" class="alert alert-success d-none" role="status" aria-live="polite" data-i18n="saveSuccess">✅ Successfully saved.</div>
+
+    <div id="tournament-end" class="d-none" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+      <div class="tournament-end-content">
+        <i class="bi bi-trophy-fill trophy-icon" aria-hidden="true"></i>
+        <h1 id="endTitle" data-i18n="endTitle">Konec turnaje</h1>
+        <p data-i18n="endSubtitle">Všechna kola dokončena</p>
+        <button id="restartTournamentBtn" type="button" class="btn btn-primary btn-lg">
+          <i class="bi bi-arrow-clockwise" aria-hidden="true"></i> <span data-i18n="restart">Restartovat</span>
+        </button>
+      </div>
+    </div>
 
     <div id="main-content">
-      <div id="clock">00:00</div>
+      <div id="round-indicator" aria-live="polite">Round 1 / 15</div>
+      <div id="clock" role="timer" aria-live="off">00:00</div>
       <div id="blinds">
         <div id="blinds-combined">100 / 200</div>
         <div id="ante">Ante: 200</div>
       </div>
-      <div id="next-blinds">Next: 200 / 400</div>
+      <div id="next-blinds" aria-live="polite">Next: 200 / 400</div>
     </div>
 
-    <div id="progressBarContainer">
+    <div id="progressBarContainer" role="progressbar" aria-label="Round progress">
       <div id="progressBar"></div>
     </div>
 
-    <i id="openForm" class="bi bi-gear-fill icon-button settings-button" title="Nastavení"></i>
-    <i id="playPauseToggle" class="bi bi-play-circle-fill icon-button pause-button" title="Spustit (mezerník)"></i>
-    <i id="fullscreenToggle" class="bi bi-arrows-fullscreen icon-button fullscreen-button" title="Celá obrazovka"></i>
+    <button id="openForm" type="button" class="bi bi-gear-fill icon-button settings-button" title="Nastavení" aria-label="Nastavení"></button>
+    <button id="playPauseToggle" type="button" class="bi bi-play-circle-fill icon-button pause-button" title="Spustit (mezerník)" aria-label="Spustit (mezerník)"></button>
+    <button id="fullscreenToggle" type="button" class="bi bi-arrows-fullscreen icon-button fullscreen-button" title="Celá obrazovka" aria-label="Celá obrazovka"></button>
+    <button id="langToggle" class="lang-toggle" type="button" title="Přepnout jazyk / Switch language" aria-label="Přepnout jazyk / Switch language">CZ</button>
 
-    <div class="modal fade" id="blindForm" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="blindForm" tabindex="-1" aria-labelledby="blindFormTitle" aria-hidden="true">
       <div class="modal-dialog modal-fullscreen">
         <div class="modal-content text-white bg-dark">
-          
+
           <div class="modal-header border-0 flex-wrap flex-md-nowrap justify-content-between align-items-center">
             <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2 gap-md-4">
-              <h1 class="modal-title mb-0">Set your rounds</h1>
+              <h1 class="modal-title mb-0" id="blindFormTitle" data-i18n="modalTitle">Set your rounds</h1>
               <div class="d-flex align-items-center gap-3">
-                <p id="roundCountDisplay" class="mb-0 text-secondary">Total rounds created: 12</p>
-                
-                <button id="resetDefaultsBtn" type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1" title="Vrátit výchozí nastavení">
-                  <i class="bi bi-arrow-counterclockwise"></i> Reset
+                <p id="roundCountDisplay" class="mb-0 text-secondary"></p>
+
+                <button id="resetDefaultsBtn" type="button" class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1" title="">
+                  <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i> <span data-i18n="reset">Reset</span>
                 </button>
               </div>
             </div>
-          
+
             <div class="d-flex align-items-center gap-4 mt-3 mt-md-0">
               <button id="saveBlinds" type="button" class="btn btn-primary fw-bold px-4 py-2 d-flex align-items-center gap-2" style="border-radius: 0.5rem; transition: all 0.2s;">
-                <i class="bi bi-check2-circle fs-5"></i> Save and Play
+                <i class="bi bi-check2-circle fs-5" aria-hidden="true"></i> <span data-i18n="saveAndConfirm">Save and Confirm</span>
               </button>
               <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Zavřít"></button>
             </div>
           </div>
 
           <div class="modal-body overflow-auto">
+            <div id="validationMessage" class="alert alert-danger d-none" role="alert" aria-live="assertive"></div>
+
             <form id="blindFormElement">
               <div class="container">
-                
+
                 <div class="mb-5 mt-2 p-4 rounded" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                  <label class="form-label text-info fw-bold mb-3">Set time for all rounds (minutes)</label>
+                  <label class="form-label text-info fw-bold mb-3" for="globalTimeInput" data-i18n="globalTimeLabel">Set time for all rounds (minutes)</label>
                   <div class="input-group">
                     <input type="number" id="globalTimeInput" class="form-control text-center bg-dark text-white" min="1" value="10" />
-                    <button id="applyGlobalTimeBtn" type="button" class="btn btn-info text-white fw-bold px-4">Use for all</button>
+                    <button id="applyGlobalTimeBtn" type="button" class="btn btn-info text-white fw-bold px-4" data-i18n="useForAll">Use for all</button>
                   </div>
                 </div>
 
                 <div class="row g-4">
                   <div class="col-12" id="rounds-container"></div>
                 </div>
-              
+
               </div>
             </form>
 
             <footer id="bottom-controls" class="d-none">
               <button id="addRoundBtn" type="button" class="btn btn-outline-success">
-                ➕ Add a new round
+                ➕ <span data-i18n="addRound">Add a new round</span>
               </button>
               <button id="addPauseBtn" type="button" class="btn btn-outline-warning">
-                ⏸️ Add a pause
+                ⏸️ <span data-i18n="addPause">Add a pause</span>
               </button>
             </footer>
-          </div>  
+          </div>
         </div>
       </div>
     </div>
-  
+
+    <audio id="transitionSound" src="/sounds/honk.mp3" preload="auto"></audio>
+    <div id="flashOverlay" aria-hidden="true"></div>
+  </div>
+
   <script is:inline src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </Layout>
 
 <script>
+  // === TYPY ===
+  type RoundData =
+    | { isPause: true; time: number }
+    | { isPause: false; smallBlind: number; bigBlind: number; time: number };
+
+  type StoredConfig = {
+    version: number;
+    data: RoundData[];
+  };
+
+  type Lang = "cs" | "en";
+
+  // === KONSTANTY ===
+  const STORAGE_KEY = "pokerTimerRounds";
+  const STORAGE_VERSION = 1;
+  const LANG_STORAGE_KEY = "pokerTimerLang";
+  const DEFAULT_ROUND_SECONDS = 600;
+  const TIMER_TICK_MS = 250;
+  const NEXT_BLIND_THRESHOLD = 0.2; // posledních 20 %
+
+  // === PŘEKLADY ===
+  const translations: Record<Lang, Record<string, string>> = {
+    cs: {
+      saveSuccess: "✅ Úspěšně uloženo.",
+      modalTitle: "Nastavení kol",
+      reset: "Reset",
+      saveAndConfirm: "Uložit a potvrdit",
+      globalTimeLabel: "Nastavit čas pro všechna kola (minuty)",
+      useForAll: "Použít pro všechna",
+      addRound: "Přidat kolo",
+      addPause: "Přidat pauzu",
+      smallBlind: "Small Blind",
+      bigBlind: "Big Blind",
+      timeMinutes: "Čas (minuty)",
+      pause: "Pauza",
+      round: "Kolo",
+      totalRounds: "Celkem kol:",
+      next: "Další:",
+      pauseLabel: "Pauza",
+      tournamentEnd: "Konec turnaje",
+      endTitle: "Konec turnaje",
+      endSubtitle: "Všechna kola dokončena",
+      restart: "Restartovat",
+      ante: "Ante:",
+      settings: "Nastavení",
+      startSpace: "Spustit (mezerník)",
+      pauseSpace: "Pozastavit (mezerník)",
+      fullscreen: "Celá obrazovka",
+      close: "Zavřít",
+      delete: "Smazat kolo",
+      resetConfirm: "Opravdu chcete vymazat aktuální nastavení a vrátit výchozí strukturu kol? (Změny se trvale uloží až po kliknutí na Uložit)",
+      validationError: "Zkontroluj zvýrazněná pole. Čas musí být alespoň 1 minuta a big blind nesmí být menší než small blind.",
+    },
+    en: {
+      saveSuccess: "✅ Successfully saved.",
+      modalTitle: "Set your rounds",
+      reset: "Reset",
+      saveAndConfirm: "Save and Confirm",
+      globalTimeLabel: "Set time for all rounds (minutes)",
+      useForAll: "Use for all",
+      addRound: "Add a new round",
+      addPause: "Add a pause",
+      smallBlind: "Small Blind",
+      bigBlind: "Big Blind",
+      timeMinutes: "Time (minutes)",
+      pause: "Pause",
+      round: "Round",
+      totalRounds: "Total rounds:",
+      next: "Next:",
+      pauseLabel: "Pause",
+      tournamentEnd: "Tournament end",
+      endTitle: "Tournament end",
+      endSubtitle: "All rounds completed",
+      restart: "Restart",
+      ante: "Ante:",
+      settings: "Settings",
+      startSpace: "Start (space)",
+      pauseSpace: "Pause (space)",
+      fullscreen: "Fullscreen",
+      close: "Close",
+      delete: "Delete round",
+      resetConfirm: "Really clear current configuration and restore default rounds? (Changes are saved permanently only after clicking Save)",
+      validationError: "Check the highlighted fields. Time must be at least 1 minute and the big blind can't be smaller than the small blind.",
+    },
+  };
+
+  let currentLang: Lang = (localStorage.getItem(LANG_STORAGE_KEY) as Lang) || "cs";
+
+  function t(key: string): string {
+    return translations[currentLang][key] || key;
+  }
+
   // === GLOBÁLNÍ PROMĚNNÉ ===
-  declare const bootstrap: any;
   let timerInterval: number | undefined;
   let currentRound = 0;
-  let roundSecondsLeft = 600; // 10 minut
-  let totalRoundSeconds = 600;
+  let roundSecondsLeft = DEFAULT_ROUND_SECONDS;
+  let totalRoundSeconds = DEFAULT_ROUND_SECONDS;
   let isTimerRunning = false;
+  let expectedEndTime = 0;
+  let wakeLock: any = null;
+  let tournamentEnded = false;
+  let rowUidCounter = 0; // pro unikátní id řádků (fix kolize id po smazání)
 
-  // === TIMER FUNKCE ===
-  let expectedEndTime = 0; // Nová proměnná pro přesný výpočet
-  let wakeLock: any = null; // Pro udržení rozsvíceného displeje
+  // === HELPER FUNKCE ===
+  function formatTime(seconds: number): string {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+  }
 
-  // === TIMER FUNKCE ===
-async function startTimer() {
+  function getInput(id: string): HTMLInputElement | null {
+    return document.getElementById(id) as HTMLInputElement | null;
+  }
+
+  function setControlLabel(el: HTMLElement | null, text: string) {
+    el?.setAttribute("title", text);
+    el?.setAttribute("aria-label", text);
+  }
+
+  // === WAKE LOCK ===
+  async function requestWakeLock() {
+    try {
+      if ("wakeLock" in navigator) {
+        wakeLock = await (navigator as any).wakeLock.request("screen");
+      }
+    } catch (err) {
+      console.log("Wake Lock nelze aktivovat", err);
+    }
+  }
+
+  function releaseWakeLock() {
+    if (wakeLock !== null) {
+      wakeLock.release().catch(console.error);
+      wakeLock = null;
+    }
+  }
+
+  // Re-acquire wake lock po návratu z pozadí
+  document.addEventListener("visibilitychange", async () => {
+    if (document.visibilityState === "visible" && isTimerRunning && wakeLock === null) {
+      await requestWakeLock();
+    }
+  });
+
+  // === TIMER ===
+  function updateProgressBar() {
+    const progressBar = document.getElementById("progressBar") as HTMLDivElement | null;
+    if (!progressBar || totalRoundSeconds <= 0) return;
+
+    const percent = Math.max(0, (roundSecondsLeft / totalRoundSeconds) * 100);
+    progressBar.style.width = `${percent}%`;
+    progressBar.classList.remove("bg-success", "bg-warning", "bg-danger");
+
+    if (percent > 66) progressBar.classList.add("bg-success");
+    else if (percent > 33) progressBar.classList.add("bg-warning");
+    else progressBar.classList.add("bg-danger");
+  }
+
+  async function startTimer() {
+    if (tournamentEnded) return;
+
+    // Pojistka proti dvojitému intervalu
+    if (timerInterval !== undefined) {
+      clearInterval(timerInterval);
+      timerInterval = undefined;
+    }
+
     const clock = document.getElementById("clock");
     const playPauseBtn = document.getElementById("playPauseToggle");
 
     isTimerRunning = true;
     playPauseBtn?.classList.replace("bi-play-circle-fill", "bi-pause-circle-fill");
-    playPauseBtn?.setAttribute("title", "Pozastavit (mezerník)");
+    setControlLabel(playPauseBtn, t("pauseSpace"));
 
-    // Žádost o udržení displeje (Wake Lock)
-    try {
-      if ('wakeLock' in navigator) {
-        wakeLock = await (navigator as any).wakeLock.request('screen');
-      }
-    } catch (err) {
-      console.log('Wake Lock nelze aktivovat', err);
-    }
+    await requestWakeLock();
 
-    // Výpočet, kdy má timer přesně skončit
-    expectedEndTime = Date.now() + (roundSecondsLeft * 1000);
+    expectedEndTime = Date.now() + roundSecondsLeft * 1000;
 
     timerInterval = window.setInterval(() => {
-      // Místo odčítání vteřin kontrolujeme reálný čas
-      const now = Date.now();
-      const remainingMs = expectedEndTime - now;
-      roundSecondsLeft = Math.ceil(remainingMs / 1000);
+      const remainingMs = expectedEndTime - Date.now();
+      roundSecondsLeft = Math.max(0, Math.round(remainingMs / 1000));
 
-      // === LOGIKA PRO ZOBRAZENÍ NEXT BLIND ===
+      // Next blind preview v posledních 20 %
       const nextBlindsDisplay = document.getElementById("next-blinds");
       if (nextBlindsDisplay && totalRoundSeconds > 0) {
-        // Zobrazí se, když zbývá 20 % nebo méně času (80 % uplynulo)
-        if ((roundSecondsLeft / totalRoundSeconds) <= 0.2) {
+        if (roundSecondsLeft / totalRoundSeconds <= NEXT_BLIND_THRESHOLD) {
           nextBlindsDisplay.classList.add("show");
         }
       }
-      // ======================================
 
-      if (roundSecondsLeft <= 0) {
+      if (remainingMs <= 0) {
         roundSecondsLeft = 0;
-        if (clock) clock.textContent = formatTime(roundSecondsLeft);
+        if (clock) clock.textContent = formatTime(0);
         updateProgressBar();
         advanceToNextRound();
-        return; // advanceToNextRound timer zastaví nebo nahodí nové kolo
+        return;
       }
-      
+
       if (clock) clock.textContent = formatTime(roundSecondsLeft);
       updateProgressBar();
-    }, 200); // Kontrolujeme častěji (5x za vteřinu) pro plynulejší překreslení
+    }, TIMER_TICK_MS);
   }
 
   function stopTimer() {
     const playPauseBtn = document.getElementById("playPauseToggle");
     isTimerRunning = false;
     clearInterval(timerInterval);
+    timerInterval = undefined;
 
-    // Uvolnění displeje
-    if (wakeLock !== null) {
-      wakeLock.release().catch(console.error);
-      wakeLock = null;
-    }
+    releaseWakeLock();
 
     playPauseBtn?.classList.replace("bi-pause-circle-fill", "bi-play-circle-fill");
-    playPauseBtn?.setAttribute("title", "Spustit (mezerník)");
+    setControlLabel(playPauseBtn, t("startSpace"));
 
     const progressBar = document.getElementById("progressBar") as HTMLDivElement | null;
     if (progressBar) {
@@ -180,15 +337,16 @@ async function startTimer() {
   }
 
   function toggleTimer() {
+    if (tournamentEnded) return;
+
     if (!isTimerRunning) {
-      // Vyřešení problému audia na iOS a Androidu (první interakce)
       const audio = document.getElementById("transitionSound") as HTMLAudioElement | null;
       if (audio && audio.currentTime === 0) {
         audio.play().then(() => audio.pause()).catch(() => {});
       }
 
       if (roundSecondsLeft <= 0) {
-        setRound(currentRound); // Nastavení kola, pokud jsme na začátku
+        setRound(currentRound);
       }
       startTimer();
     } else {
@@ -196,61 +354,60 @@ async function startTimer() {
     }
   }
 
-  function formatTime(seconds: number): string {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
-  }
-
-  function updateProgressBar() {
-    const progressBar = document.getElementById("progressBar") as HTMLDivElement | null;
-    if (!progressBar || totalRoundSeconds <= 0) return;
-
-    const percent = Math.max(0, (roundSecondsLeft / totalRoundSeconds) * 100);
-    progressBar.style.width = `${percent}%`;
-
-    progressBar.classList.remove("bg-success", "bg-warning", "bg-danger");
-
-    if (percent > 66) {
-      progressBar.classList.add("bg-success");
-    } else if (percent > 33) {
-      progressBar.classList.add("bg-warning");
-    } else {
-      progressBar.classList.add("bg-danger");
-    }
-  }
-
-function advanceToNextRound() {
-    // 1. NEJDŮLEŽITĚJŠÍ: Okamžitě zastavit starý interval, ať se nezblázní!
-    stopTimer(); 
+  function advanceToNextRound() {
+    stopTimer();
 
     const rounds = document.querySelectorAll("#rounds-container .round-row");
     const audio = document.getElementById("transitionSound") as HTMLAudioElement | null;
     const overlay = document.getElementById("flashOverlay");
 
-    // 2. Vizuální a zvukové efekty
     if (audio) {
-        audio.currentTime = 0;
-        audio.play().catch(e => console.log("Audio zablokováno prohlížečem", e));
+      audio.currentTime = 0;
+      audio.play().catch((e) => console.log("Audio zablokováno prohlížečem", e));
     }
     if (overlay) {
-        overlay.classList.remove("flash-blink");
-        void overlay.offsetWidth; // Restartuje CSS animaci
-        overlay.classList.add("flash-blink");
+      overlay.classList.remove("flash-blink");
+      void overlay.offsetWidth;
+      overlay.classList.add("flash-blink");
     }
 
-    // 3. Kontrola, jestli už nejsme na úplném konci (s úpravou indexu, ať to nespadne)
     if (currentRound + 1 >= rounds.length) {
-      console.log("Konec kol.");
+      showTournamentEnd();
       return;
     }
 
-    // 4. Nastavení nového kola
     currentRound++;
     setRound(currentRound);
-
-    // 5. Automatické spuštění nového odpočtu
     startTimer();
+  }
+
+  function showTournamentEnd() {
+    tournamentEnded = true;
+    const endScreen = document.getElementById("tournament-end");
+    const mainContent = document.getElementById("main-content");
+    const progressBar = document.getElementById("progressBarContainer");
+    const playPause = document.getElementById("playPauseToggle");
+
+    endScreen?.classList.remove("d-none");
+    mainContent?.classList.add("d-none");
+    progressBar?.classList.add("d-none");
+    playPause?.classList.add("d-none");
+  }
+
+  function hideTournamentEnd() {
+    tournamentEnded = false;
+    document.getElementById("tournament-end")?.classList.add("d-none");
+    document.getElementById("main-content")?.classList.remove("d-none");
+    document.getElementById("progressBarContainer")?.classList.remove("d-none");
+    document.getElementById("playPauseToggle")?.classList.remove("d-none");
+  }
+
+  function restartTournament() {
+    hideTournamentEnd();
+    currentRound = 0;
+    setRound(0);
+    const clock = document.getElementById("clock");
+    if (clock) clock.textContent = formatTime(roundSecondsLeft);
   }
 
   function setRoundSeconds(seconds: number) {
@@ -258,71 +415,73 @@ function advanceToNextRound() {
     totalRoundSeconds = seconds;
   }
 
-  // === BLINDS FUNKCE ===
-function createStandardRound(i: number, customSmall?: number, customBig?: number, customTime?: number) {
+  // === BLINDS RENDERING ===
+  function createStandardRound(i: number, customSmall?: number, customBig?: number, customTime?: number) {
     const container = document.getElementById("rounds-container");
     if (!container) return;
 
     const row = document.createElement("div");
     row.className = "round-row mb-4";
 
-    // Pokud nemáme uložené hodnoty, použijeme původní výpočet
-    const smallBlindValue = customSmall !== undefined ? customSmall : i * 100;
-    const bigBlindValue = customBig !== undefined ? customBig : smallBlindValue * 2;
-    const defaultTime = customTime !== undefined ? customTime : 10;
+    // Hodnoty bezpečně přetypujeme na čísla (i kdyby v localStorage byl nesmysl)
+    const smallBlindValue = Number(customSmall !== undefined ? customSmall : i * 100) || 0;
+    const bigBlindValue = Number(customBig !== undefined ? customBig : smallBlindValue * 2) || 0;
+    const defaultTime = Number(customTime !== undefined ? customTime : 10) || 10;
+
+    // Unikátní id pro řádek – řeší kolizi id po smazání kola
+    const uid = `r${rowUidCounter++}`;
+    const smallId = `small_${uid}`;
+    const bigId = `big_${uid}`;
+    const timeId = `time_${uid}`;
 
     row.innerHTML = `
       <div class="round-column">
-        <label class="form-label">Round ${i} – Small Blind</label>
+        <label class="form-label round-label" for="${smallId}">${t("round")} ${i} – ${t("smallBlind")}</label>
         <div class="input-group">
-          <button class="btn btn-outline-light" type="button" onclick="window.adjustBlind('small${i}', -100)">-100</button>
-          <input type="number" class="form-control text-center" id="small${i}" step="100" min="0" value="${smallBlindValue}" />
-          <button class="btn btn-outline-light" type="button" onclick="window.adjustBlind('small${i}', 100)">+100</button>
+          <button class="btn btn-outline-light btn-blind-decr" type="button" data-target="${smallId}" data-delta="-100" aria-label="-100">-100</button>
+          <input type="number" class="form-control text-center" id="${smallId}" step="100" min="0" value="${smallBlindValue}" aria-label="${t("round")} ${i} ${t("smallBlind")}" />
+          <button class="btn btn-outline-light btn-blind-incr" type="button" data-target="${smallId}" data-delta="100" aria-label="+100">+100</button>
         </div>
       </div>
       <div class="round-column">
-        <label class="form-label">Big Blind</label>
+        <label class="form-label big-label" for="${bigId}">${t("bigBlind")}</label>
         <div class="input-group">
-          <button class="btn btn-outline-light" type="button" onclick="window.adjustBlind('big${i}', -100)">-100</button>
-          <input type="number" class="form-control text-center" id="big${i}" step="100" min="0" value="${bigBlindValue}" />
-          <button class="btn btn-outline-light" type="button" onclick="window.adjustBlind('big${i}', 100)">+100</button>
+          <button class="btn btn-outline-light btn-blind-decr" type="button" data-target="${bigId}" data-delta="-100" aria-label="-100">-100</button>
+          <input type="number" class="form-control text-center" id="${bigId}" step="100" min="0" value="${bigBlindValue}" aria-label="${t("round")} ${i} ${t("bigBlind")}" />
+          <button class="btn btn-outline-light btn-blind-incr" type="button" data-target="${bigId}" data-delta="100" aria-label="+100">+100</button>
         </div>
       </div>
       <div class="round-column">
-        <label class="form-label">Time (minutes)</label>
+        <label class="form-label time-label" for="${timeId}">${t("timeMinutes")}</label>
         <div class="input-group">
-          <input type="number" class="form-control text-center" id="time${i}" min="1" value="${defaultTime}" />
-          <button type="button" class="btn btn-outline-danger ms-2" onclick="this.closest('.round-row')?.remove(); window.reindexRounds(); window.updateRoundCountDisplay();">
-            🗑️
-          </button>
+          <input type="number" class="form-control text-center" id="${timeId}" min="1" value="${defaultTime}" aria-label="${t("round")} ${i} ${t("timeMinutes")}" />
+          <button type="button" class="btn btn-outline-danger btn-delete-row" title="${t("delete")}" aria-label="${t("delete")}">🗑️</button>
         </div>
       </div>
     `;
     container.appendChild(row);
   }
 
-function createPauseRound(customTime?: number) {
+  function createPauseRound(customTime?: number) {
     const container = document.getElementById("rounds-container");
     if (!container) return;
 
     const pauseRow = document.createElement("div");
     pauseRow.className = "round-row mb-4";
     pauseRow.setAttribute("data-pause", "true");
-    const pauseId = `pause${Date.now()}`;
-    const timeValue = customTime !== undefined ? customTime : 10;
+    const pauseId = `pause${Date.now()}${Math.random().toString(36).slice(2, 5)}`;
+    const timeValue = Number(customTime !== undefined ? customTime : 10) || 10;
 
     pauseRow.innerHTML = `
       <div class="round-column">
-        <label class="form-label">Pause</label>
+        <label class="form-label pause-name-label">${t("pause")}</label>
       </div>
       <div class="round-column"></div>
       <div class="round-column">
-        <label class="form-label">Čas (minuty)</label>
+        <label class="form-label pause-time-label" for="${pauseId}">${t("timeMinutes")}</label>
         <div class="input-group">
-          <input type="number" class="form-control text-center" id="${pauseId}" min="1" value="${timeValue}" />
-          <button type="button" class="btn btn-outline-danger ms-2" onclick="this.closest('.round-row')?.remove(); window.reindexRounds(); window.updateRoundCountDisplay();">
-            🗑️
-          </button>
+          <input type="number" class="form-control text-center" id="${pauseId}" min="1" value="${timeValue}" aria-label="${t("pause")} ${t("timeMinutes")}" />
+          <button type="button" class="btn btn-outline-danger btn-delete-row" title="${t("delete")}" aria-label="${t("delete")}">🗑️</button>
         </div>
       </div>
     `;
@@ -331,9 +490,9 @@ function createPauseRound(customTime?: number) {
 
   function saveRoundsToStorage() {
     const rows = document.querySelectorAll("#rounds-container .round-row");
-    const roundsData: any[] = []; // Obejití TS kontroly pro jednoduchost
+    const roundsData: RoundData[] = [];
 
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const isPause = row.hasAttribute("data-pause");
       if (isPause) {
         const pauseInput = row.querySelector("input[type=number]") as HTMLInputElement;
@@ -346,72 +505,84 @@ function createPauseRound(customTime?: number) {
           isPause: false,
           smallBlind: Number(smallBlind?.value) || 0,
           bigBlind: Number(bigBlind?.value) || 0,
-          time: Number(timeInput?.value) || 10
+          time: Number(timeInput?.value) || 10,
         });
       }
     });
 
-    localStorage.setItem("pokerTimerRounds", JSON.stringify(roundsData));
+    const config: StoredConfig = { version: STORAGE_VERSION, data: roundsData };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  }
+
+  function loadRoundsFromStorage(): RoundData[] | null {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw) as StoredConfig | RoundData[];
+      // Backward compatibility — pokud je to starý formát (array bez version), použij ho
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+      if (parsed && parsed.version === STORAGE_VERSION && Array.isArray(parsed.data)) {
+        return parsed.data;
+      }
+      console.warn("Nekompatibilní verze localStorage, použiji defaults");
+      return null;
+    } catch (e) {
+      console.error("Chyba při načítání z localStorage", e);
+      return null;
+    }
+  }
+
+  function generateDefaultRounds() {
+    for (let i = 1; i <= 15; i++) {
+      createStandardRound(i);
+      if (i === 6 || i === 12) {
+        createPauseRound();
+      }
+    }
   }
 
   function resetToDefaults() {
-    const isConfirmed = confirm("Opravdu chcete vymazat aktuální nastavení a vrátit výchozí strukturu kol? (Změny se trvale uloží až po kliknutí na Uložit)");
-    
-    if (isConfirmed) {
-      const container = document.getElementById("rounds-container");
-      if (!container) return;
-      container.innerHTML = ""; // Vymaže aktuální zobrazení
+    const isConfirmed = confirm(t("resetConfirm"));
+    if (!isConfirmed) return;
 
-      // Vygeneruje zpět tvou původní logiku (15 kol, pauzy po 6. a 12.)
-      for (let i = 1; i <= 15; i++) {
-        createStandardRound(i);
-        if (i === 6 || i === 12) {
-          createPauseRound();
-        }
-      }
-      updateRoundCountDisplay();
-    }
+    const container = document.getElementById("rounds-container");
+    if (!container) return;
+    clearValidation();
+    container.innerHTML = "";
+    generateDefaultRounds();
+    updateRoundCountDisplay();
   }
-function createBlindRounds() {
+
+  function createBlindRounds() {
     const container = document.getElementById("rounds-container");
     if (!container) return;
     container.innerHTML = "";
 
-    const savedData = localStorage.getItem("pokerTimerRounds");
+    const savedData = loadRoundsFromStorage();
 
-    if (savedData) {
-      try {
-        // Pokud najdeme uložená data, vykreslíme je
-        const roundsData = JSON.parse(savedData);
-        let roundIndex = 1;
-        
-        roundsData.forEach((data: any) => {
-          if (data.isPause) {
-            createPauseRound(data.time);
-          } else {
-            createStandardRound(roundIndex, data.smallBlind, data.bigBlind, data.time);
-            roundIndex++;
-          }
-        });
-      } catch (e) {
-        console.error("Chyba při načítání z localStorage", e);
-      }
-    } else {
-      // Pokud nemáme uloženo nic, vygenerujeme výchozí strukturu (staré chování)
-      for (let i = 1; i <= 15; i++) {
-        createStandardRound(i);
-        if (i === 6 || i === 12) {
-          createPauseRound();
+    if (savedData && savedData.length > 0) {
+      let roundIndex = 1;
+      savedData.forEach((data) => {
+        if (data.isPause) {
+          createPauseRound(data.time);
+        } else {
+          createStandardRound(roundIndex, data.smallBlind, data.bigBlind, data.time);
+          roundIndex++;
         }
-      }
+      });
+    } else {
+      generateDefaultRounds();
     }
-    
+
     updateRoundCountDisplay();
   }
 
   function addNewRound() {
-    const rounds = document.querySelectorAll("#rounds-container .round-row").length;
-    createStandardRound(rounds + 1);
+    // Index jen pro výpočet defaultních blindů a label – id je už unikátní
+    const standardCount = getTotalNonPauseRounds();
+    createStandardRound(standardCount + 1);
     reindexRounds();
     updateRoundCountDisplay();
   }
@@ -423,10 +594,11 @@ function createBlindRounds() {
   }
 
   function applyGlobalTime() {
-    const globalInput = document.getElementById("globalTimeInput") as HTMLInputElement | null;
+    const globalInput = getInput("globalTimeInput");
     if (!globalInput) return;
     const minutes = Number(globalInput.value);
-    const inputs = document.querySelectorAll("#rounds-container input[id^=time]");
+    if (Number.isNaN(minutes) || minutes < 1) return;
+    const inputs = document.querySelectorAll("#rounds-container input[id^=time], #rounds-container input[id^=pause]");
     inputs.forEach((input) => {
       (input as HTMLInputElement).value = minutes.toString();
     });
@@ -436,17 +608,67 @@ function createBlindRounds() {
     const rows = document.querySelectorAll("#rounds-container .round-row");
     let roundNumber = 1;
 
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const isPause = row.hasAttribute("data-pause");
-      if (!isPause) {
-        const label = row.querySelector(".round-column label");
+      if (isPause) {
+        // Re-translate statické labely pauzy při změně jazyka
+        const nameLabel = row.querySelector(".pause-name-label");
+        if (nameLabel) nameLabel.textContent = t("pause");
+        const pauseTimeLabel = row.querySelector(".pause-time-label");
+        if (pauseTimeLabel) pauseTimeLabel.textContent = t("timeMinutes");
+      } else {
+        const label = row.querySelector(".round-label");
         if (label) {
-          label.textContent = `Round ${roundNumber} – Small Blind`;
-          roundNumber++;
+          label.textContent = `${t("round")} ${roundNumber} – ${t("smallBlind")}`;
         }
+        // Re-translate ostatní labely (big blind, čas) při změně jazyka
+        const bigLabel = row.querySelector(".big-label");
+        if (bigLabel) bigLabel.textContent = t("bigBlind");
+        const timeLabel = row.querySelector(".time-label");
+        if (timeLabel) timeLabel.textContent = t("timeMinutes");
+        roundNumber++;
       }
     });
     updateRoundCountDisplay();
+  }
+
+  function getTotalNonPauseRounds(): number {
+    const allRounds = document.querySelectorAll("#rounds-container .round-row");
+    let count = 0;
+    allRounds.forEach((row) => {
+      if (!row.hasAttribute("data-pause")) count++;
+    });
+    return count;
+  }
+
+  function getCurrentRoundNumber(index: number): number {
+    // Vrátí pořadí ne-pauzového kola od začátku (1-based), pro pauzu vrátí 0
+    const rounds = document.querySelectorAll("#rounds-container .round-row");
+    let count = 0;
+    for (let i = 0; i <= index && i < rounds.length; i++) {
+      if (!rounds[i].hasAttribute("data-pause")) count++;
+    }
+    return count;
+  }
+
+  function updateRoundIndicator(index: number) {
+    const indicator = document.getElementById("round-indicator");
+    if (!indicator) return;
+
+    const rounds = document.querySelectorAll("#rounds-container .round-row");
+    const round = rounds[index];
+    if (!round) {
+      indicator.textContent = "";
+      return;
+    }
+
+    const total = getTotalNonPauseRounds();
+    if (round.hasAttribute("data-pause")) {
+      indicator.textContent = t("pauseLabel");
+    } else {
+      const num = getCurrentRoundNumber(index);
+      indicator.textContent = `${t("round")} ${num} / ${total}`;
+    }
   }
 
   function setRound(index: number) {
@@ -458,12 +680,11 @@ function createBlindRounds() {
     const blindsCombined = document.getElementById("blinds-combined");
     const anteDisplay = document.getElementById("ante");
 
-    let seconds = 600;
+    let seconds = DEFAULT_ROUND_SECONDS;
 
     if (isPause) {
-      if (blindsCombined) blindsCombined.textContent = "Pause";
+      if (blindsCombined) blindsCombined.textContent = t("pauseLabel");
       if (anteDisplay) anteDisplay.textContent = "";
-
       const pauseInput = round.querySelector("input[type=number]") as HTMLInputElement;
       seconds = (Number(pauseInput?.value) || 10) * 60;
     } else {
@@ -475,35 +696,32 @@ function createBlindRounds() {
         blindsCombined.textContent = `${smallBlind.value} / ${bigBlind.value}`;
       }
       if (anteDisplay && bigBlind) {
-        anteDisplay.textContent = `Ante: ${bigBlind.value}`;
+        anteDisplay.textContent = `${t("ante")} ${bigBlind.value}`;
       }
-
       seconds = (Number(timeInput?.value) || 10) * 60;
     }
-    
+
     setRoundSeconds(seconds);
+    updateRoundIndicator(index);
 
-    // --- LOGIKA PRO NEXT BLIND ---
+    // Next blind preview
     const nextBlindsDisplay = document.getElementById("next-blinds");
-    const nextRound = rounds[index + 1]; // Získání HTML elementu dalšího kola
-
+    const nextRound = rounds[index + 1];
     if (nextBlindsDisplay) {
-      // Skrýt náhled na začátku nového kola (aby se mohl později znovu animovat)
       nextBlindsDisplay.classList.remove("show");
-
       if (nextRound) {
         const isNextPause = nextRound.hasAttribute("data-pause");
         if (isNextPause) {
-          nextBlindsDisplay.textContent = "Next: Pauza";
+          nextBlindsDisplay.textContent = `${t("next")} ${t("pauseLabel")}`;
         } else {
           const nextSmall = nextRound.querySelector("input[id^='small']") as HTMLInputElement;
           const nextBig = nextRound.querySelector("input[id^='big']") as HTMLInputElement;
           if (nextSmall && nextBig) {
-            nextBlindsDisplay.textContent = `Next: ${nextSmall.value} / ${nextBig.value}`;
+            nextBlindsDisplay.textContent = `${t("next")} ${nextSmall.value} / ${nextBig.value}`;
           }
         }
       } else {
-        nextBlindsDisplay.textContent = "Next: Konec turnaje";
+        nextBlindsDisplay.textContent = `${t("next")} ${t("tournamentEnd")}`;
       }
     }
   }
@@ -511,19 +729,63 @@ function createBlindRounds() {
   function updateRoundCountDisplay() {
     const display = document.getElementById("roundCountDisplay");
     if (!display) return;
-    const allRounds = document.querySelectorAll("#rounds-container .round-row");
-    let count = 0;
-    allRounds.forEach(row => {
-      if (!row.hasAttribute("data-pause")) count++;
-    });
-    display.textContent = `Total rounds created: ${count}`;
+    display.textContent = `${t("totalRounds")} ${getTotalNonPauseRounds()}`;
   }
 
-  // === MODAL A HELPERS ===
-// === MODAL A HELPERS ===
+  // === VALIDACE VSTUPŮ ===
+  function clearValidation() {
+    document.querySelectorAll("#rounds-container .is-invalid")
+      .forEach((el) => el.classList.remove("is-invalid"));
+    document.getElementById("validationMessage")?.classList.add("d-none");
+  }
+
+  function markInvalid(el: HTMLInputElement | null) {
+    el?.classList.add("is-invalid");
+  }
+
+  function validateRounds(): boolean {
+    clearValidation();
+    let valid = true;
+    const rows = document.querySelectorAll("#rounds-container .round-row");
+
+    rows.forEach((row) => {
+      const isPause = row.hasAttribute("data-pause");
+
+      if (isPause) {
+        const timeInput = row.querySelector("input[id^='pause']") as HTMLInputElement;
+        const time = Number(timeInput?.value);
+        if (!timeInput?.value || Number.isNaN(time) || time < 1) {
+          markInvalid(timeInput);
+          valid = false;
+        }
+      } else {
+        const small = row.querySelector("input[id^='small']") as HTMLInputElement;
+        const big = row.querySelector("input[id^='big']") as HTMLInputElement;
+        const timeInput = row.querySelector("input[id^='time']") as HTMLInputElement;
+        const sV = Number(small?.value);
+        const bV = Number(big?.value);
+        const tV = Number(timeInput?.value);
+
+        if (small?.value === "" || Number.isNaN(sV) || sV < 0) { markInvalid(small); valid = false; }
+        if (big?.value === "" || Number.isNaN(bV) || bV < 0) { markInvalid(big); valid = false; }
+        if (!Number.isNaN(sV) && !Number.isNaN(bV) && bV < sV) { markInvalid(big); valid = false; }
+        if (!timeInput?.value || Number.isNaN(tV) || tV < 1) { markInvalid(timeInput); valid = false; }
+      }
+    });
+
+    if (!valid) {
+      const msg = document.getElementById("validationMessage");
+      if (msg) {
+        msg.textContent = "❌ " + t("validationError");
+        msg.classList.remove("d-none");
+      }
+    }
+    return valid;
+  }
+
+  // === MODAL ===
   function openForm() {
     const modalElement = document.getElementById("blindForm");
-    // Voláme objekt přes window, aby Astro a TypeScript neprotestovaly
     if (modalElement && (window as any).bootstrap) {
       new (window as any).bootstrap.Modal(modalElement).show();
     }
@@ -533,20 +795,25 @@ function createBlindRounds() {
     const roundElements = document.querySelectorAll("#rounds-container .round-row");
     if (roundElements.length === 0) return;
 
+    // Validace – při chybě nic neukládáme a modal necháme otevřený
+    if (!validateRounds()) return;
+
+    // Reset stavu (ale timer NESPOUŠTÍME – pustí ho uživatel přes play)
+    stopTimer();
+    hideTournamentEnd();
+    currentRound = 0;
     setRound(0);
 
     const clockElement = document.getElementById("clock");
-    if (clockElement) {
-      clockElement.textContent = formatTime(roundSecondsLeft);
-    }
+    if (clockElement) clockElement.textContent = formatTime(roundSecondsLeft);
 
+    saveRoundsToStorage();
     showSaveMessage();
 
     const modal = document.getElementById("blindForm");
     if (modal && (window as any).bootstrap) {
       (window as any).bootstrap.Modal.getInstance(modal)?.hide();
     }
-    saveRoundsToStorage();
   }
 
   function showSaveMessage() {
@@ -562,29 +829,58 @@ function createBlindRounds() {
 
   function initLoader() {
     setTimeout(() => {
-      document.querySelector('.poker-timer-app')?.classList.add("loaded");
-      const loader = document.getElementById('loader');
+      document.querySelector(".poker-timer-app")?.classList.add("loaded");
+      const loader = document.getElementById("loader");
       if (loader) {
-        loader.style.opacity = '0';
-        loader.style.visibility = 'hidden';
+        loader.style.opacity = "0";
+        loader.style.visibility = "hidden";
       }
     }, 500);
   }
 
-  // Připojení funkcí na window objekt, protože se volají přímo z HTML (onclick)
-  (window as any).adjustBlind = (inputId: string, change: number) => {
-    const input = document.getElementById(inputId) as HTMLInputElement | null;
-    if (input) {
-      const current = Number(input.value) || 0;
-      input.value = Math.max(0, current + change).toString();
+  // === JAZYK ===
+  function applyLanguage() {
+    // Atribut lang na <html> kvůli přístupnosti / čtečkám
+    document.documentElement.lang = currentLang;
+
+    // Statické texty s data-i18n
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+      const key = el.getAttribute("data-i18n");
+      if (key) el.textContent = t(key);
+    });
+
+    // Titulky / aria-labely tlačítek
+    setControlLabel(document.getElementById("openForm"), t("settings"));
+    setControlLabel(document.getElementById("playPauseToggle"), isTimerRunning ? t("pauseSpace") : t("startSpace"));
+    setControlLabel(document.getElementById("fullscreenToggle"), t("fullscreen"));
+    document.getElementById("resetDefaultsBtn")?.setAttribute("title", t("reset"));
+
+    // Tlačítko jazyka
+    const langBtn = document.getElementById("langToggle");
+    if (langBtn) langBtn.textContent = currentLang === "cs" ? "EN" : "CZ";
+
+    // Překreslení labelů kol s novými překlady (hodnoty zůstanou)
+    reindexRounds();
+
+    // Aktualizace aktuálního kola na hlavní obrazovce
+    if (!tournamentEnded) {
+      const rounds = document.querySelectorAll("#rounds-container .round-row");
+      if (rounds.length > 0) {
+        setRound(currentRound);
+      }
     }
-  };
-  (window as any).reindexRounds = reindexRounds;
-  (window as any).updateRoundCountDisplay = updateRoundCountDisplay;
+  }
+
+  function toggleLanguage() {
+    currentLang = currentLang === "cs" ? "en" : "cs";
+    localStorage.setItem(LANG_STORAGE_KEY, currentLang);
+    applyLanguage();
+  }
 
   // === INICIALIZACE ===
   initLoader();
   createBlindRounds();
+  applyLanguage();
 
   const openFormBtn = document.getElementById("openForm");
   const saveBlindsBtn = document.getElementById("saveBlinds");
@@ -595,6 +891,10 @@ function createBlindRounds() {
   const blindForm = document.getElementById("blindForm");
   const bottomControls = document.getElementById("bottom-controls");
   const resetDefaultsBtn = document.getElementById("resetDefaultsBtn");
+  const langToggleBtn = document.getElementById("langToggle");
+  const restartBtn = document.getElementById("restartTournamentBtn");
+  const fullscreenToggle = document.getElementById("fullscreenToggle");
+  const roundsContainer = document.getElementById("rounds-container");
 
   openFormBtn?.addEventListener("click", openForm);
   saveBlindsBtn?.addEventListener("click", saveBlinds);
@@ -603,20 +903,56 @@ function createBlindRounds() {
   addRoundBtn?.addEventListener("click", addNewRound);
   addPauseBtn?.addEventListener("click", addNewPause);
   resetDefaultsBtn?.addEventListener("click", resetToDefaults);
+  langToggleBtn?.addEventListener("click", toggleLanguage);
+  restartBtn?.addEventListener("click", restartTournament);
+
+  // Event delegation pro tlačítka v řádcích (místo onclick atributů)
+  roundsContainer?.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement;
+    if (!target) return;
+
+    // -100 / +100 tlačítka
+    if (target.classList.contains("btn-blind-decr") || target.classList.contains("btn-blind-incr")) {
+      const inputId = target.getAttribute("data-target");
+      const delta = Number(target.getAttribute("data-delta") || "0");
+      if (inputId) {
+        const input = getInput(inputId);
+        if (input) {
+          const current = Number(input.value) || 0;
+          input.value = Math.max(0, current + delta).toString();
+          input.classList.remove("is-invalid");
+        }
+      }
+    }
+
+    // Smazat řádek
+    if (target.classList.contains("btn-delete-row")) {
+      target.closest(".round-row")?.remove();
+      reindexRounds();
+      updateRoundCountDisplay();
+    }
+  });
+
+  // Při úpravě hodnoty zruš červené zvýraznění
+  roundsContainer?.addEventListener("input", (e) => {
+    const target = e.target as HTMLElement;
+    if (target && target.classList.contains("is-invalid")) {
+      target.classList.remove("is-invalid");
+    }
+  });
 
   if (blindForm && bottomControls) {
     blindForm.addEventListener("show.bs.modal", () => {
       bottomControls.classList.remove("d-none");
+      clearValidation();
     });
     blindForm.addEventListener("hide.bs.modal", () => {
       bottomControls.classList.add("d-none");
     });
   }
 
-  const fullscreenToggle = document.getElementById("fullscreenToggle");
-
-  // Funkce pro přepnutí fullscreenu a změnu ikony
-function toggleFullscreen() {
+  // === FULLSCREEN ===
+  function toggleFullscreen() {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch((err) => console.log(err));
     } else {
@@ -626,37 +962,38 @@ function toggleFullscreen() {
 
   fullscreenToggle?.addEventListener("click", toggleFullscreen);
 
-  // Systémový hlídač – zachytí i stisknutí klávesy ESC
-  document.addEventListener('fullscreenchange', () => {
-    const nav = document.querySelector('.main-nav') as HTMLElement;
-    
+  document.addEventListener("fullscreenchange", () => {
+    const nav = document.querySelector(".main-nav") as HTMLElement;
     if (document.fullscreenElement) {
-      // Jsme ve fullscreenu -> schovat navigaci a změnit ikonku
-      if (nav) nav.style.display = 'none';
+      if (nav) nav.style.display = "none";
       fullscreenToggle?.classList.replace("bi-arrows-fullscreen", "bi-fullscreen-exit");
     } else {
-      // Jsme zpět v normálním režimu -> ukázat navigaci a změnit ikonku zpět
-      if (nav) nav.style.display = 'flex';
+      if (nav) nav.style.display = "flex";
       fullscreenToggle?.classList.replace("bi-fullscreen-exit", "bi-arrows-fullscreen");
     }
   });
 
-  // Připojení funkce na tlačítko
-  fullscreenToggle?.addEventListener("click", toggleFullscreen);
-
+  // === KLÁVESOVÉ ZKRATKY ===
   document.addEventListener("keydown", (e) => {
-    if (e.code === "Space") {
-      e.preventDefault();
-      toggleTimer();
-    }
+    if (e.code !== "Space") return;
+
+    // Neaktivovat, pokud uživatel píše do inputu
+    const target = e.target as HTMLElement | null;
+    const tag = target?.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "BUTTON") return;
+
+    // Neaktivovat, pokud je otevřený modal
+    if (blindForm?.classList.contains("show")) return;
+
+    e.preventDefault();
+    toggleTimer();
   });
 
   const clockElement = document.getElementById("clock");
-  if (clockElement) clockElement.textContent = "10:00";
+  if (clockElement) clockElement.textContent = formatTime(DEFAULT_ROUND_SECONDS);
 </script>
 
 <style is:global>
-  /* === ZÁKLADNÍ ROZVRŽENÍ === */
   html, body {
     background-color: #1a1a1a !important;
     margin: 0;
@@ -670,7 +1007,7 @@ function toggleFullscreen() {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100vw;
+    width: 100%;            /* místo 100vw – nepřetéká kvůli scrollbaru */
     min-height: 100vh;
     background-color: #1a1a1a;
     color: #e0e0e0;
@@ -680,18 +1017,14 @@ function toggleFullscreen() {
     align-items: center;
   }
 
-  /* === NAVIGACE === */
   .main-nav {
     position: relative;
     z-index: 9999 !important;
     pointer-events: none !important;
   }
-  
-  .nav-container {
-    pointer-events: auto !important;
-  }
 
-  /* === HLAVNÍ OBSAH (HODINY A BLINDY) === */
+  .nav-container { pointer-events: auto !important; }
+
   #main-content {
     width: 100%;
     max-width: 1200px;
@@ -699,61 +1032,122 @@ function toggleFullscreen() {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2rem;
-    margin-top: 15vh;
+    gap: 1.5rem;
+    margin-top: 10vh;
     z-index: 10;
+    padding: 0 1rem;
+  }
+
+  /* === ZÁKLADNÍ TYPOGRAFIE DASHBOARDU (kapnuto přes clamp, dolaďuje se v media queries) === */
+  #round-indicator {
+    font-size: clamp(1rem, 1.6vw, 1.8rem);
+    color: #aaa;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
   }
 
   #clock {
-    font-size: 18vw;
+    font-size: clamp(5rem, 15vw, 18rem);
     text-align: center;
     color: #fafafa;
-    line-height: 1; 
+    line-height: 1;
   }
 
   #blinds {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 5vw;
-    font-size: 4vw;
+    gap: clamp(1.5rem, 4vw, 4rem);
+    font-size: clamp(2rem, 3.5vw, 4.5rem);
     font-weight: 500;
     text-align: center;
     color: #dddddd;
     flex-wrap: wrap;
   }
 
-#next-blinds {
-    font-size: clamp(1rem, 2vw, 1.8rem);
+  #next-blinds {
+    font-size: clamp(1rem, 1.6vw, 1.8rem);
     font-weight: 400;
     color: #888888;
     margin-top: -1rem;
     text-align: center;
-    /* NOVÉ: Skrytí a plynulý přechod */
     opacity: 0;
     visibility: hidden;
     transition: opacity 1s ease, visibility 1s ease;
   }
 
-  /* NOVÁ TŘÍDA: Pro zobrazení textu */
   #next-blinds.show {
     opacity: 1;
     visibility: visible;
   }
 
-  #blinds-combined,
-  #ante {
-    font-size: inherit;
+  #blinds-combined, #ante { font-size: inherit; }
+
+  /* === TOURNAMENT END SCREEN === */
+  #tournament-end {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at center, rgba(13,110,253,0.15) 0%, #1a1a1a 70%);
+    z-index: 50;
   }
 
-  /* === TLAČÍTKA A OVLÁDÁNÍ === */
+  .tournament-end-content {
+    text-align: center;
+    color: white;
+    padding: 2rem;
+  }
+
+  .tournament-end-content h1 {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    font-weight: 700;
+    margin: 1rem 0 0.5rem;
+    background: linear-gradient(135deg, #ffc107, #ff9800);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .tournament-end-content p {
+    font-size: clamp(1rem, 2vw, 1.5rem);
+    color: #aaa;
+    margin-bottom: 2rem;
+  }
+
+  .trophy-icon {
+    font-size: clamp(4rem, 10vw, 8rem);
+    color: #ffc107;
+    text-shadow: 0 0 30px rgba(255, 193, 7, 0.5);
+    animation: trophyPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes trophyPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+
+  #restartTournamentBtn {
+    font-size: clamp(1rem, 2vw, 1.4rem);
+    padding: 0.75rem 2rem;
+    border-radius: 0.5rem;
+  }
+
+  /* === TLAČÍTKA === */
   .icon-button {
-    font-size: 4vw;
+    font-size: clamp(1.6rem, 2.5vw, 2.6rem);
     cursor: pointer;
     position: absolute;
     transition: transform 0.2s ease, color 0.2s ease;
     color: #888;
     z-index: 100;
+    background: none;
+    border: none;
+    padding: 0;
+    line-height: 1;
   }
 
   .icon-button:hover {
@@ -761,25 +1155,58 @@ function toggleFullscreen() {
     color: #00bcd4;
   }
 
+  /* Viditelný focus pro klávesnici (přístupnost) */
+  .icon-button:focus-visible,
+  .lang-toggle:focus-visible,
+  .btn:focus-visible {
+    outline: 3px solid #00bcd4;
+    outline-offset: 3px;
+  }
+
   .settings-button {
     top: 2vh;
     right: 2vw;
   }
 
-  /* Opravené Play/Pause tlačítko - plynule pod progress barem */
+  .fullscreen-button {
+    top: 2vh;
+    left: 2vw;
+    font-size: clamp(1.6rem, 2vw, 2.5rem);
+  }
+  .fullscreen-button:hover { transform: scale(1.1); }
+
+  .lang-toggle {
+    position: absolute;
+    top: 2vh;
+    left: calc(2vw + 4rem);
+    background: transparent;
+    border: 2px solid #888;
+    color: #888;
+    border-radius: 0.4rem;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 100;
+  }
+
+  .lang-toggle:hover {
+    color: #00bcd4;
+    border-color: #00bcd4;
+  }
+
   .pause-button {
-    position: relative; 
-    margin-top: 4vh; 
-    font-size: 5rem; 
+    position: relative;
+    margin-top: 4vh;
+    font-size: clamp(3.5rem, 6vw, 6rem);
     color: white;
     z-index: 100;
     transition: transform 0.2s ease, color 0.2s ease;
     cursor: pointer;
   }
 
-  .pause-button:hover {
-    transform: scale(1.1);
-  }
+  .pause-button:hover { transform: scale(1.1); }
 
   #progressBarContainer {
     width: 90%;
@@ -797,23 +1224,8 @@ function toggleFullscreen() {
     height: 100%;
     background-color: #0d6efd;
     width: 100%;
-    transition: width 1s linear;
+    transition: width 0.3s linear;
     box-shadow: 0 0 10px rgba(0,0,0,0.5);
-  }
-
-  .settings-button {
-    top: 2vh;
-    right: 2vw;
-  }
-
-  /* NOVÉ: Tlačítko pro celou obrazovku v levém horním rohu */
-  .fullscreen-button {
-    top: 2vh;
-    left: 2vw;
-    font-size: 2.5rem;
-  }
-  .fullscreen-button:hover {
-    transform: scale(1.1);
   }
 
   /* === IKONY V POZADÍ === */
@@ -831,14 +1243,9 @@ function toggleFullscreen() {
   .bottom-left { bottom: -5vw; left: -5vw; transform: rotate(10deg); }
   .bottom-right { bottom: -5vw; right: -5vw; transform: rotate(-10deg); }
 
-  /* === BOOTSTRAP MODAL A JEHO OPRAVY === */
-  .modal-backdrop {
-    z-index: 10000 !important;
-  }
-  
-  .modal {
-    z-index: 10001 !important;
-  }
+  /* === MODAL === */
+  .modal-backdrop { z-index: 10000 !important; }
+  .modal { z-index: 10001 !important; }
 
   .modal-content {
     border-radius: 0.5rem;
@@ -848,34 +1255,24 @@ function toggleFullscreen() {
     border: none;
   }
 
-  /* OPRAVA ZAVÍRACÍHO KŘÍŽKU */
   .modal-content .btn-close {
-    font-size: 1.2rem; /* Zmenšeno z 2.4rem na rozumnou velikost */
-    filter: invert(1); /* Zůstane bílý na černém pozadí */
+    font-size: 1.2rem;
+    filter: invert(1);
     opacity: 0.5;
     transition: opacity 0.2s;
   }
 
-  .modal-content .btn-close:hover {
-    opacity: 1;
-  }
+  .modal-content .btn-close:hover { opacity: 1; }
 
-  .modal-header { 
-    background-color: black; 
+  .modal-header {
+    background-color: black;
     gap: 2rem;
-  }
-
-  .header-actions {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    z-index: 10;
   }
 
   .modal-body {
     background-color: black;
     color: white;
-    padding: 5rem;
+    padding: clamp(1rem, 4vw, 4rem);   /* místo fixních 5rem – na menších displejích nemačká obsah */
     overflow-y: auto;
     overflow-x: hidden;
     box-sizing: border-box;
@@ -892,6 +1289,13 @@ function toggleFullscreen() {
     box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25);
   }
 
+  /* Validace – červené zvýraznění neplatných polí */
+  .modal-content .is-invalid {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, .4) !important;
+  }
+
+  #validationMessage { margin-bottom: 1.5rem; }
 
   #bottom-controls {
     position: fixed;
@@ -913,7 +1317,8 @@ function toggleFullscreen() {
     display: flex;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 3rem;
+    gap: 1.5rem 2rem;
+    align-items: flex-start;
     padding-bottom: 2rem;
   }
 
@@ -924,11 +1329,18 @@ function toggleFullscreen() {
     margin-top: 1.5rem;
   }
 
+  .round-row[data-pause="true"] {
+    background: rgba(255, 193, 7, 0.05);
+    border-left: 4px solid #ffc107;
+    border-radius: 0.4rem;
+    padding-left: 1rem;
+  }
+
   .round-column {
-    font-size: 25px;
-    flex: 1 1 30%;
-    min-width: 280px;
-    max-width: 300px;
+    font-size: 1.1rem;
+    flex: 1 1 220px;     /* pružné – samo se zalomí 3/2/1 sloupec podle šířky */
+    min-width: 0;        /* klíč: dovolí zmenšit se pod obsah, nepřetéká */
+    max-width: none;
   }
 
   #rounds-container { width: 100%; }
@@ -937,7 +1349,7 @@ function toggleFullscreen() {
     flex-wrap: nowrap;
     width: 100%;
     min-width: 0;
-    overflow: hidden;
+    /* overflow: hidden odstraněn – ořezával tlačítka */
   }
 
   .input-group .form-control {
@@ -945,27 +1357,25 @@ function toggleFullscreen() {
     flex: 1;
   }
 
-  .save-icon-btn:hover {
-    transform: scale(1.15);
-    background-color: #0d6efd;
-    color: white;
-    border-color: #0d6efd;
+  .input-group .btn {
+    flex: 0 0 auto;
+    white-space: nowrap;   /* tlačítka -100/+100 se nezmenší pod text */
   }
 
   .modal-title {
     font-size: 1.8rem;
     font-weight: 600;
-    margin-right: 4rem;
+    margin-right: 2rem;
   }
 
   #roundCountDisplay {
-    font-size: 1.8rem;
-    font-weight: 600;
+    font-size: 1.2rem;
+    font-weight: 500;
     display: flex;
     align-items: center;
   }
 
-  /* === EFEKTY A LOADER === */
+  /* === EFEKTY === */
   #flashOverlay {
     position: fixed;
     top: 0;
@@ -1009,9 +1419,7 @@ function toggleFullscreen() {
     margin: 0;
   }
 
-  input[type=number] {
-    -moz-appearance: textfield;
-  }
+  input[type=number] { -moz-appearance: textfield; }
 
   #loader {
     position: fixed;
@@ -1041,88 +1449,89 @@ function toggleFullscreen() {
   @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   @keyframes pulse { 0%, 100% { transform: scale(1) rotate(0deg); } 50% { transform: scale(1.15) rotate(180deg); } }
 
-  /* === RESPONSIVE === */
-  @media (max-width: 1024px) {
+  /* =======================================================================
+     MEDIA QUERIES PRO KONKRÉTNÍ ZAŘÍZENÍ
+     1) Mobil               do 600 px
+     2) Tablet 10"          601 – 1024 px
+     3) Notebook 15"        1025 – 1920 px
+     4) Monitor 27" 2K      1921 – 2560 px
+     5) Ultrawide 34" 21:9  2561 px a více
+     ======================================================================= */
 
-    .fullscreen-button {
-      top: 1rem;
-      left: 1rem;
+  /* --- 1) MOBIL (do 600 px) --- */
+  @media (max-width: 600px) {
+    #main-content { margin-top: 6vh; gap: 1rem; }
+
+    #clock { font-size: 24vw; margin-top: 2vh; }
+
+    #blinds {
+      flex-direction: column;
+      font-size: 7vw;
+      gap: 0.4rem;
     }
 
-    .header-actions {
-      top: 0.5rem;
-      right: 0.5rem;
+    #round-indicator { font-size: 1rem; }
+    #next-blinds { font-size: 1rem; }
+
+    .fullscreen-button { top: 1rem; left: 1rem; }
+    .lang-toggle { top: 1rem; left: calc(1rem + 3rem); padding: 0.2rem 0.5rem; }
+    .settings-button { top: 1rem; right: 1rem; }
+
+    /* Play tlačítko – pevně vpravo dole, dobře dosáhnutelné palcem */
+    .pause-button {
+      position: fixed !important;
+      bottom: 4vh !important;
+      right: 6vw !important;
+      left: auto !important;
+      margin-top: 0 !important;
+      transform: none !important;
+      font-size: 6rem !important;
+      z-index: 9999 !important;
+      text-shadow: 0 0 15px rgba(0, 0, 0, 0.7);
     }
+    .pause-button:hover { transform: scale(1.1) !important; }
 
-
+    /* Nastavení kol – vše pod sebou, vycentrované */
     .round-row {
       flex-direction: column;
-      align-items: center; 
-      gap: 2rem; /* Trochu víc místa, aby to dýchalo */
-      padding: 1.5rem 0;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1.25rem 0;
       width: 100%;
     }
 
     .round-column {
       width: 100%;
-      /* Šířku omezíme o něco víc, aby inputy nebyly na mobilech příliš dlouhé */
-      max-width: 320px; 
+      max-width: 360px;
       display: flex;
       flex-direction: column;
-      align-items: center; 
+      align-items: center;
       text-align: center;
     }
 
-    /* Nadpisy */
     .round-column label {
-      font-size: 1.2rem;
-      margin-bottom: 0.75rem;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
       color: #ccc;
-      width: 100%; /* Zajistí plné vycentrování textu */
+      width: 100%;
     }
 
-    /* Obal pro inputy a tlačítka - tady se to láme */
     .round-column .input-group {
       width: 100%;
       display: flex;
       justify-content: center;
-      /* Přidáme mírný stín a zakulacení na celou skupinu pro lepší pocit */
-      border-radius: 0.375rem; 
-      overflow: hidden; 
     }
 
-    /* Samotné pole pro číslo */
-    .round-column .form-control {
-      flex: 1; /* Zabere veškerý zbylý prostor mezi tlačítky */
-      /* Zrušíme to dřívější omezení max-width: 150px, ať se to hezky roztáhne */
-      max-width: none; 
-      text-align: center;
-      font-size: 1.1rem;
-      /* Zakážeme inputu, aby měl svoje vlastní kulaté rohy (když je uvnitř skupiny) */
-      border-radius: 0 !important; 
+    .round-column .btn-outline-light,
+    .round-column .btn-outline-danger {
+      flex: 0 0 60px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    /* Fix pro pole s časem a košem (chybí mu pravé tlačítko) */
-    .round-column:last-child .input-group {
-      /* Místo centrování roztáhneme skupinu na stejnou šířku jako ostatní */
-      width: 100%; 
-    }
-
-    .round-column:last-child .form-control {
-      max-width: 150px;
-    }
-
-    .round-column:last-child .btn-outline-danger {
-      /* Koš bude mít stejnou šířku (65px) jako +100 tlačítko */
-      margin-left: 0 !important;
-      border-top-left-radius: 0;
-      border-bottom-left-radius: 0;
-    }
-
-    .modal-body {
-      padding: 1rem;
-      padding-bottom: 180px; 
-    }
+    .modal-body { padding-bottom: 150px; }
 
     .modal-title, #roundCountDisplay {
       font-size: 1.2rem;
@@ -1131,85 +1540,75 @@ function toggleFullscreen() {
     }
 
     #bottom-controls {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      background: rgba(0, 0, 0, 0.9);
-      padding: 3rem 2rem;
-      display: flex;
+      padding: 1rem 1rem;
       flex-wrap: wrap;
-      justify-content: center;
-      gap: 1rem;
-      z-index: 1050;
-      border-top: 1px solid #444;
-      backdrop-filter: blur(6px);
+      gap: 0.75rem;
     }
-
-    /* Pevná šířka pro VŠECHNA boční tlačítka (-100, +100, koš) */
-    .round-column .btn-outline-light,
-    .round-column .btn-outline-danger {
-      flex: 0 0 65px; /* Nechceme, aby se zmenšovala nebo zvětšovala, pevně 65px */
-      padding: 0; /* Zrušení vnitřních okrajů, aby text nevytekl */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 500;
-    }
-
-    #bottom-controls button {
-      font-size: clamp(1.2rem, 2.5vw, 1.2rem);
-      max-width: 250px;
-      flex: 1 1 auto;
-    }
+    #bottom-controls button { flex: 1 1 auto; max-width: 220px; }
   }
-  
 
-  @media (max-width: 768px) {
-    .icon-button { font-size: 4vw; }
-    
-    #blinds {
-      flex-direction: column;
-      font-size: 6vw;
-      gap: 0.5rem;
-    }
+  /* --- 2) TABLET 10" (601 – 1024 px) --- */
+  @media (min-width: 601px) and (max-width: 1024px) {
+    #main-content { margin-top: 8vh; }
+    #clock { font-size: 16vw; }
+    #blinds { font-size: 5vw; }
 
-    #clock {
-      font-size: 20vw;
-      margin-top: 4vh;
-    }
+    .fullscreen-button { top: 1.5rem; left: 1.5rem; }
+    .lang-toggle { top: 1.5rem; left: calc(1.5rem + 3.5rem); }
+    .settings-button { top: 1.5rem; right: 1.5rem; }
 
-    .round-row {
-      flex-direction: column;
-      gap: 1rem;
-      align-items: center;
-    }
+    /* Sloupce se samy zalomí (díky flex 1 1 220px) – obvykle 2 vedle sebe */
+    .round-column { font-size: 1.15rem; }
 
-    .round-column {
-      width: 100%;
-      max-width: none;
-      text-align: center;
-    }
+    .modal-body { padding-bottom: 130px; }
+    #bottom-controls { padding: 1rem 1.5rem; }
+  }
 
-    .modal-body {
-      padding: 1rem;
-      padding-bottom: 180px;
-    }
+  /* --- 3) NOTEBOOK 15" / běžný desktop (1025 – 1920 px) --- */
+  @media (min-width: 1025px) and (max-width: 1920px) {
+    #main-content { max-width: 1200px; }
+    #clock { font-size: clamp(9rem, 14vw, 16rem); }
+    #blinds { font-size: clamp(2.5rem, 3.5vw, 4rem); }
+    /* 3 sloupce kol vedle sebe */
+  }
 
-    /* NOVÉ: Velké plovoucí tlačítko v pravém rohu pro mobily */
-    .pause-button {
-      position: fixed !important;
-      bottom: 4vh !important;
-      right: 6vw !important;
-      left: auto !important;
-      transform: none !important;
-      font-size: 6.5rem !important; /* Pořádně velké pro snadný zásah palcem */
-      z-index: 9999 !important; /* Nad vším kromě otevřeného modalu */
-      text-shadow: 0 0 15px rgba(0, 0, 0, 0.7); /* Lepší viditelnost na tmavém pozadí */
-    }
+  /* --- 4) MONITOR 27" 2K (1921 – 2560 px) --- */
+  @media (min-width: 1921px) and (max-width: 2560px) {
+    #main-content { max-width: 1500px; }
+    #progressBarContainer { max-width: 1500px; }
+    #clock { font-size: 19rem; }
+    #blinds { font-size: 4.5rem; }
+    #round-indicator, #next-blinds { font-size: 1.8rem; }
+    .icon-button { font-size: 2.8rem; }
+    .pause-button { font-size: 6.5rem; }
+  }
 
-    .pause-button:hover {
-      transform: scale(1.1) !important;
+  /* --- 5) ULTRAWIDE 34" 21:9 (2561 px a více) --- */
+  @media (min-width: 2561px) {
+    /* obsah necentrujeme přes celou šířku – jinak by byl rozházený */
+    #main-content { max-width: 1800px; margin-top: 12vh; gap: 2rem; }
+    #progressBarContainer { max-width: 1800px; }
+    #clock { font-size: 24rem; }
+    #blinds { font-size: 6rem; gap: 6rem; }
+    #round-indicator, #next-blinds { font-size: 2.2rem; }
+    .icon-button { font-size: 3.2rem; }
+    .pause-button { font-size: 7.5rem; }
+    .icon-wrapper { font-size: 14vw; }   /* dekorace v rozích menší, ať nepřebíjí obsah */
+  }
+
+  /* === PŘÍSTUPNOST: omezení pohybu === */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
     }
+    /* červené blikání úplně vypneme (fotosenzitivita) */
+    .flash-blink { animation: none !important; opacity: 0 !important; }
+    .trophy-icon { animation: none !important; }
+    #loader img { animation: none !important; }
   }
 </style>
+</document_content>
