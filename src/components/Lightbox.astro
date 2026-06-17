@@ -17,7 +17,7 @@
   <button id="lightbox-next" class="lightbox-btn nav-btn next-btn" aria-label="Next image">&#10095;</button>
 
   <div class="lightbox-container">
-    <img id="lightbox-img" src="" alt="Full screen photograph" />
+    <img id="lightbox-img" alt="Full screen photograph" />
   </div>
 </div>
 
@@ -121,31 +121,39 @@
   let prevBtn: HTMLElement | null = null;
   let nextBtn: HTMLElement | null = null;
 
-  let imagesList: string[] = [];
+  let imagesList: string[] = [];   // velké (fullscreen) varianty
+  let thumbsList: string[] = [];   // náhledy – fallback, když velká varianta selže
   let currentIndex = 0;
   let lastFocusedElement: HTMLElement | null = null;
-  let keydownBound = false; // document keydown navázat jen jednou
+  let keydownBound = false;        // document keydown navázat jen jednou
 
   const isActive = () => !!lightbox?.classList.contains('active');
 
-  // Naplnění pole fotek (jen ty, které nejsou skryté případným filtrem)
+  // Naplnění polí z DOM (jen položky, které nejsou skryté případným filtrem)
   const updateImagesList = () => {
     imagesList = [];
+    thumbsList = [];
     document.querySelectorAll('.gallery-item').forEach((item) => {
-      if ((item as HTMLElement).style.display !== 'none') {
-        const src = item.getAttribute('data-full-src');
-        if (src) imagesList.push(src);
+      if ((item as HTMLElement).style.display === 'none') return;
+      const full = item.getAttribute('data-full-src') || '';
+      const thumbImg = item.querySelector('img') as HTMLImageElement | null;
+      const thumb = thumbImg?.currentSrc || thumbImg?.src || '';
+      if (full || thumb) {
+        imagesList.push(full || thumb); // kdyby chybělo data-full-src, použij rovnou náhled
+        thumbsList.push(thumb);
       }
     });
   };
 
   const updateImageDisplay = (index: number) => {
     if (!lightboxImg) return;
+    const src = imagesList[index];
+    if (!src) return; // nikdy nenastavovat prázdné src (vyhne se „rozbité" ikoně)
     lightboxImg.style.opacity = '0';
     lightboxImg.style.transform = 'scale(0.98)';
     setTimeout(() => {
       if (!lightboxImg) return;
-      lightboxImg.src = imagesList[index] ?? '';
+      lightboxImg.src = src;
       lightboxImg.style.opacity = '1';
       lightboxImg.style.transform = 'scale(1)';
     }, 150);
@@ -166,7 +174,7 @@
     if (!lightbox) return;
     lightbox.classList.remove('active');
     document.body.style.overflow = '';
-    setTimeout(() => { if (lightboxImg) lightboxImg.src = ''; }, 300);
+    setTimeout(() => { if (lightboxImg) lightboxImg.removeAttribute('src'); }, 300);
     lastFocusedElement?.focus(); // vrátit fokus na fotku, ze které se otevíralo
   };
 
@@ -203,6 +211,22 @@
     else if (e.key === 'Tab') trapFocus(e);
   };
 
+  // Když se velká varianta nenačte (404 / nenasazený asset / pomalý dev převod),
+  // spadni zpět na náhled, který už je na stránce načtený → uživatel uvidí fotku,
+  // ne rozbitou ikonu. Do konzole vypíšeme, co selhalo (diagnostika).
+  const onImgError = () => {
+    if (!lightboxImg) return;
+    const failed = lightboxImg.getAttribute('src') || '';
+    if (!failed) return;
+    const thumb = thumbsList[currentIndex];
+    if (thumb && failed !== thumb) {
+      console.warn('[lightbox] fullscreen varianta se nenačetla, používám náhled:', failed);
+      lightboxImg.src = thumb;
+    } else {
+      console.error('[lightbox] obrázek se nenačetl:', failed);
+    }
+  };
+
   const setup = () => {
     // Tyto elementy jsou po každé navigaci NOVÉ → vždy znovu načíst reference
     lightbox = document.getElementById('lightbox');
@@ -230,6 +254,10 @@
         closeLightbox();
       }
     });
+
+    // onerror na <img> – #lightbox-img je po navigaci nový, ale guard držíme přes errorBound,
+    // protože element se mění; raději navázat pokaždé na aktuální img:
+    lightboxImg.addEventListener('error', onImgError);
 
     // document PŘEŽÍVÁ view transitions → keydown navázat jen jednou (jinak by se hromadil)
     if (!keydownBound) {
