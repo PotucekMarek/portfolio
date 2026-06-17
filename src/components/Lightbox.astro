@@ -114,109 +114,129 @@
 </style>
 
 <script>
-  document.addEventListener('astro:page-load', () => {
-    const lightbox = document.getElementById('lightbox');
-    const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement;
-    const closeBtn = document.getElementById('lightbox-close');
-    const prevBtn = document.getElementById('lightbox-prev');
-    const nextBtn = document.getElementById('lightbox-next');
+  // === Stav (modul-scope) – přežívá view transitions, proto se elementy obnovují v setup() ===
+  let lightbox: HTMLElement | null = null;
+  let lightboxImg: HTMLImageElement | null = null;
+  let closeBtn: HTMLElement | null = null;
+  let prevBtn: HTMLElement | null = null;
+  let nextBtn: HTMLElement | null = null;
+
+  let imagesList: string[] = [];
+  let currentIndex = 0;
+  let lastFocusedElement: HTMLElement | null = null;
+  let keydownBound = false; // document keydown navázat jen jednou
+
+  const isActive = () => !!lightbox?.classList.contains('active');
+
+  // Naplnění pole fotek (jen ty, které nejsou skryté případným filtrem)
+  const updateImagesList = () => {
+    imagesList = [];
+    document.querySelectorAll('.gallery-item').forEach((item) => {
+      if ((item as HTMLElement).style.display !== 'none') {
+        const src = item.getAttribute('data-full-src');
+        if (src) imagesList.push(src);
+      }
+    });
+  };
+
+  const updateImageDisplay = (index: number) => {
+    if (!lightboxImg) return;
+    lightboxImg.style.opacity = '0';
+    lightboxImg.style.transform = 'scale(0.98)';
+    setTimeout(() => {
+      if (!lightboxImg) return;
+      lightboxImg.src = imagesList[index] ?? '';
+      lightboxImg.style.opacity = '1';
+      lightboxImg.style.transform = 'scale(1)';
+    }, 150);
+  };
+
+  const openLightbox = (index: number, triggerElement: HTMLElement) => {
+    if (!lightbox) return;
+    updateImagesList();
+    lastFocusedElement = triggerElement;
+    currentIndex = index;
+    updateImageDisplay(currentIndex);
+    lightbox.classList.add('active');
+    document.body.style.overflow = 'hidden'; // zamknout scroll pozadí
+    closeBtn?.focus();
+  };
+
+  const closeLightbox = () => {
+    if (!lightbox) return;
+    lightbox.classList.remove('active');
+    document.body.style.overflow = '';
+    setTimeout(() => { if (lightboxImg) lightboxImg.src = ''; }, 300);
+    lastFocusedElement?.focus(); // vrátit fokus na fotku, ze které se otevíralo
+  };
+
+  const nextImage = (e?: Event) => {
+    e?.stopPropagation();
+    if (imagesList.length === 0) return;
+    currentIndex = (currentIndex + 1) % imagesList.length;
+    updateImageDisplay(currentIndex);
+  };
+
+  const prevImage = (e?: Event) => {
+    e?.stopPropagation();
+    if (imagesList.length === 0) return;
+    currentIndex = (currentIndex - 1 + imagesList.length) % imagesList.length;
+    updateImageDisplay(currentIndex);
+  };
+
+  // Jednoduchý focus trap – drží Tab uvnitř dialogu (cyklí mezi close/prev/next)
+  const trapFocus = (e: KeyboardEvent) => {
+    const focusables = [closeBtn, prevBtn, nextBtn].filter(Boolean) as HTMLElement[];
+    if (focusables.length === 0) return;
+    e.preventDefault();
+    const current = focusables.indexOf(document.activeElement as HTMLElement);
+    const dir = e.shiftKey ? -1 : 1;
+    const target = focusables[(Math.max(0, current) + dir + focusables.length) % focusables.length];
+    target.focus();
+  };
+
+  const onKeydown = (e: KeyboardEvent) => {
+    if (!isActive()) return;
+    if (e.key === 'Escape') closeLightbox();
+    else if (e.key === 'ArrowRight') nextImage();
+    else if (e.key === 'ArrowLeft') prevImage();
+    else if (e.key === 'Tab') trapFocus(e);
+  };
+
+  const setup = () => {
+    // Tyto elementy jsou po každé navigaci NOVÉ → vždy znovu načíst reference
+    lightbox = document.getElementById('lightbox');
+    lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement | null;
+    closeBtn = document.getElementById('lightbox-close');
+    prevBtn = document.getElementById('lightbox-prev');
+    nextBtn = document.getElementById('lightbox-next');
+
     const galleryItems = document.querySelectorAll('.gallery-item');
-
-    // Pole pro uchování URL adres všech zobrazených fotek
-    let imagesList: string[] = [];
-    let currentIndex = 0;
-    // Slouží pro návrat focusu po zavření
-    let lastFocusedElement: HTMLElement | null = null;
-
     if (!lightbox || !lightboxImg || galleryItems.length === 0) return;
 
-    // Naplnění pole s fotkami (vezmeme jen ty, které zrovna nejsou vyfiltrované)
-    const updateImagesList = () => {
-      imagesList = [];
-      galleryItems.forEach(item => {
-        // Zpracováváme jen fotky, které nejsou aktuálně skryté filtrem (display: none)
-        if ((item as HTMLElement).style.display !== 'none') {
-           const src = item.getAttribute('data-full-src');
-           if (src) imagesList.push(src);
-        }
-      });
-    };
-
-    // Funkce pro aktualizaci obrázku s jemnou animací
-    const updateImageDisplay = (index: number) => {
-      lightboxImg.style.opacity = '0';
-      lightboxImg.style.transform = 'scale(0.98)';
-      
-      setTimeout(() => {
-        lightboxImg.src = imagesList[index];
-        lightboxImg.style.opacity = '1';
-        lightboxImg.style.transform = 'scale(1)';
-      }, 150); // Krátká prodleva pro fade-out efekt
-    };
-
-    const openLightbox = (index: number, triggerElement: HTMLElement) => {
-      updateImagesList();
-      lastFocusedElement = triggerElement;
-      currentIndex = index;
-      
-      updateImageDisplay(currentIndex);
-      lightbox.classList.add('active');
-      
-      // UX & A11y: Zamknutí scrollu na pozadí
-      document.body.style.overflow = 'hidden';
-      // Přepnutí focusu do modalu (na tlačítko zavřít)
-      closeBtn?.focus(); 
-    };
-
-    const closeLightbox = () => {
-      lightbox.classList.remove('active');
-      document.body.style.overflow = ''; // Odemknutí scrollu
-      
-      setTimeout(() => { lightboxImg.src = ''; }, 300);
-      
-      // A11y: Vrácení focusu na fotku, na kterou uživatel kliknul
-      if (lastFocusedElement) {
-        lastFocusedElement.focus();
-      }
-    };
-
-    const nextImage = (e?: Event) => {
-      if (e) e.stopPropagation();
-      currentIndex = (currentIndex + 1) % imagesList.length;
-      updateImageDisplay(currentIndex);
-    };
-
-    const prevImage = (e?: Event) => {
-      if (e) e.stopPropagation();
-      currentIndex = (currentIndex - 1 + imagesList.length) % imagesList.length;
-      updateImageDisplay(currentIndex);
-    };
-
-    // Event Listenery
+    // Klik na fotky (nové elementy → navázat pokaždé)
     galleryItems.forEach((item, index) => {
       item.addEventListener('click', (e) => {
         openLightbox(index, e.currentTarget as HTMLElement);
       });
     });
 
+    // Ovládací prvky lightboxu se s view transitions taky vyměňují → navázat pokaždé
     closeBtn?.addEventListener('click', closeLightbox);
-    nextBtn?.addEventListener('click', nextImage);
-    prevBtn?.addEventListener('click', prevImage);
-
-    // Zavření při kliknutí mimo fotku
+    nextBtn?.addEventListener('click', (e) => nextImage(e));
+    prevBtn?.addEventListener('click', (e) => prevImage(e));
     lightbox.addEventListener('click', (e) => {
       if (e.target === lightbox || (e.target as HTMLElement).classList.contains('lightbox-container')) {
         closeLightbox();
       }
     });
 
-    // Klávesové zkratky
-    document.addEventListener('keydown', (e) => {
-      if (!lightbox.classList.contains('active')) return;
-      
-      if (e.key === 'Escape') closeLightbox();
-      if (e.key === 'ArrowRight') nextImage();
-      if (e.key === 'ArrowLeft') prevImage();
-    });
-  });
+    // document PŘEŽÍVÁ view transitions → keydown navázat jen jednou (jinak by se hromadil)
+    if (!keydownBound) {
+      document.addEventListener('keydown', onKeydown);
+      keydownBound = true;
+    }
+  };
+
+  document.addEventListener('astro:page-load', setup);
 </script>
