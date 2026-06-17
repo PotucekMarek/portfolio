@@ -1,10 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import { Image } from 'astro:assets';
+import SchemaPerson from '../components/SchemaPerson.astro';
 import profileImage from '../assets/gallery/PXL_20250522_114504978.jpg';
 ---
 
 <Layout title="Marek | Photographer & Developer">
+  <SchemaPerson />
+
   <div class="bg-grid"></div>
 
   <div class="ambient-glow glow-1"></div>
@@ -22,10 +25,13 @@ import profileImage from '../assets/gallery/PXL_20250522_114504978.jpg';
       
       <div class="text-block animate-slide-up" style="--delay: 0.4s">
         <p>
-          Some text.
+          I'm a QA engineer based in Olomouc, Czech Republic. By day I test
+          government software — writing automated UI tests and making sure things
+          behave the way they should before they ship.
         </p>
         <p>
-          Some text.
+          Off the clock I build small web projects and shoot photos whenever I get
+          the chance. This site is where the code and the camera meet.
         </p>
       </div>
       
