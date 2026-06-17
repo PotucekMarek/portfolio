@@ -50,6 +50,7 @@ import Layout from '../layouts/Layout.astro';
     <button id="playPauseToggle" type="button" class="bi bi-play-circle-fill icon-button pause-button" title="Spustit (mezerník)" aria-label="Spustit (mezerník)"></button>
     <button id="fullscreenToggle" type="button" class="bi bi-arrows-fullscreen icon-button fullscreen-button" title="Celá obrazovka" aria-label="Celá obrazovka"></button>
     <button id="langToggle" class="lang-toggle" type="button" title="Přepnout jazyk / Switch language" aria-label="Přepnout jazyk / Switch language">EN</button>
+    <a id="homeBtn" href="/" class="bi bi-house-door-fill icon-button home-button" title="Domů / Home" aria-label="Domů / Home"></a>
 
     <div class="modal fade" id="blindForm" tabindex="-1" aria-labelledby="blindFormTitle" aria-hidden="true">
       <div class="modal-dialog modal-fullscreen">
@@ -1043,13 +1044,10 @@ import Layout from '../layouts/Layout.astro';
     align-items: center;
   }
 
+  /* Globální navigace na časomíře překáží → schováme ji a nahradíme malým tlačítkem Domů */
   .main-nav {
-    position: relative;
-    z-index: 9999 !important;
-    pointer-events: none !important;
+    display: none !important;
   }
-
-  .nav-container { pointer-events: auto !important; }
 
   #main-content {
     width: 100%;
@@ -1220,6 +1218,13 @@ import Layout from '../layouts/Layout.astro';
   .lang-toggle:hover {
     color: #00bcd4;
     border-color: #00bcd4;
+  }
+
+  /* Tlačítko Domů – nahrazuje schovanou navigaci, volný levý dolní roh */
+  .home-button {
+    bottom: 2vh;
+    left: 2vw;
+    text-decoration: none;
   }
 
   .pause-button {
@@ -1502,6 +1507,7 @@ import Layout from '../layouts/Layout.astro';
     .fullscreen-button { top: 1rem; left: 1rem; }
     .lang-toggle { top: 1rem; left: calc(1rem + 3rem); padding: 0.2rem 0.5rem; }
     .settings-button { top: 1rem; right: 1rem; }
+    .home-button { bottom: 1rem; left: 1rem; }
 
     /* Play tlačítko – pevně vpravo dole, dobře dosáhnutelné palcem */
     .pause-button {
