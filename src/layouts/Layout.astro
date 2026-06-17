@@ -25,7 +25,10 @@ const {
     
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    
+
+    <!-- Místo pro head obsah konkrétní stránky (např. styly/fonty poker-timeru) -->
+    <slot name="head" />
+
     <ClientRouter />
   </head>
   <body>
