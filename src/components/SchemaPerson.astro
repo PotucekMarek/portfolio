@@ -1,18 +1,22 @@
 ---
 // src/components/SchemaPerson.astro
+const site = Astro.site ?? new URL("https://www.marekpotucek.com/");
+
 const schema = {
   "@context": "https://schema.org",
   "@type": "Person",
   "name": "Marek Potuček",
-  "jobTitle": "Photographer, QA Tester & Full-stack Developer ",
-  "url": Astro.site ? Astro.site.toString() : "https://www.marekpotucek.com/",
-  "image": new URL("/og-image.jpg", Astro.site || "https://www.marekpotucek.com/").toString(),
+  "jobTitle": "Photographer, QA Tester & Full-stack Developer",
+  "url": site.toString(),
+  "image": new URL("/og-image.jpg", site).toString(),
   "sameAs": [
-    //"https://www.instagram.com/yourprofile", 
-    //"https://www.linkedin.com/in/yourprofile"
-  ]
+    "https://github.com/PotucekMarek",
+    // Až budeš mít, odkomentuj a doplň reálné profily:
+    // "https://www.linkedin.com/in/tvuj-profil/",
+    // "https://www.instagram.com/tvuj-profil/",
+  ],
 };
 ---
 
-<!-- set:html zajistí, že Astro vloží JSON objekt přímo jako text bez úprav -->
+<!-- set:html vloží JSON přímo jako text bez úprav -->
 <script type="application/ld+json" set:html={JSON.stringify(schema)} />
