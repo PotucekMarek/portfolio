@@ -3,9 +3,11 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Poker Timer">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <Fragment slot="head">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  </Fragment>
 
   <div class="poker-timer-app">
     <div id="loader">
@@ -17,7 +19,7 @@ import Layout from '../layouts/Layout.astro';
     <div class="icon-wrapper bottom-left" aria-hidden="true"><i class="bi bi-suit-club big-icon"></i></div>
     <div class="icon-wrapper bottom-right" aria-hidden="true"><i class="bi bi-suit-spade big-icon"></i></div>
 
-    <div id="saveMessage" class="alert alert-success d-none" role="status" aria-live="polite" data-i18n="saveSuccess">✅ Successfully saved.</div>
+    <div id="saveMessage" class="alert alert-success d-none" role="status" aria-live="polite" data-i18n="saveSuccess">✅ Úspěšně uloženo.</div>
 
     <div id="tournament-end" class="d-none" role="dialog" aria-modal="true" aria-labelledby="endTitle">
       <div class="tournament-end-content">
@@ -31,13 +33,13 @@ import Layout from '../layouts/Layout.astro';
     </div>
 
     <div id="main-content">
-      <div id="round-indicator" aria-live="polite">Round 1 / 15</div>
+      <div id="round-indicator" aria-live="polite">Kolo 1 / 15</div>
       <div id="clock" role="timer" aria-live="off">00:00</div>
       <div id="blinds">
         <div id="blinds-combined">100 / 200</div>
         <div id="ante">Ante: 200</div>
       </div>
-      <div id="next-blinds" aria-live="polite">Next: 200 / 400</div>
+      <div id="next-blinds" aria-live="polite">Další: 200 / 400</div>
     </div>
 
     <div id="progressBarContainer" role="progressbar" aria-label="Round progress">
@@ -47,7 +49,7 @@ import Layout from '../layouts/Layout.astro';
     <button id="openForm" type="button" class="bi bi-gear-fill icon-button settings-button" title="Nastavení" aria-label="Nastavení"></button>
     <button id="playPauseToggle" type="button" class="bi bi-play-circle-fill icon-button pause-button" title="Spustit (mezerník)" aria-label="Spustit (mezerník)"></button>
     <button id="fullscreenToggle" type="button" class="bi bi-arrows-fullscreen icon-button fullscreen-button" title="Celá obrazovka" aria-label="Celá obrazovka"></button>
-    <button id="langToggle" class="lang-toggle" type="button" title="Přepnout jazyk / Switch language" aria-label="Přepnout jazyk / Switch language">CZ</button>
+    <button id="langToggle" class="lang-toggle" type="button" title="Přepnout jazyk / Switch language" aria-label="Přepnout jazyk / Switch language">EN</button>
 
     <div class="modal fade" id="blindForm" tabindex="-1" aria-labelledby="blindFormTitle" aria-hidden="true">
       <div class="modal-dialog modal-fullscreen">
@@ -55,7 +57,7 @@ import Layout from '../layouts/Layout.astro';
 
           <div class="modal-header border-0 flex-wrap flex-md-nowrap justify-content-between align-items-center">
             <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2 gap-md-4">
-              <h1 class="modal-title mb-0" id="blindFormTitle" data-i18n="modalTitle">Set your rounds</h1>
+              <h1 class="modal-title mb-0" id="blindFormTitle" data-i18n="modalTitle">Nastavení kol</h1>
               <div class="d-flex align-items-center gap-3">
                 <p id="roundCountDisplay" class="mb-0 text-secondary"></p>
 
@@ -67,7 +69,7 @@ import Layout from '../layouts/Layout.astro';
 
             <div class="d-flex align-items-center gap-4 mt-3 mt-md-0">
               <button id="saveBlinds" type="button" class="btn btn-primary fw-bold px-4 py-2 d-flex align-items-center gap-2" style="border-radius: 0.5rem; transition: all 0.2s;">
-                <i class="bi bi-check2-circle fs-5" aria-hidden="true"></i> <span data-i18n="saveAndConfirm">Save and Confirm</span>
+                <i class="bi bi-check2-circle fs-5" aria-hidden="true"></i> <span data-i18n="saveAndConfirm">Uložit a potvrdit</span>
               </button>
               <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Zavřít"></button>
             </div>
@@ -80,10 +82,10 @@ import Layout from '../layouts/Layout.astro';
               <div class="container">
 
                 <div class="mb-5 mt-2 p-4 rounded" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
-                  <label class="form-label text-info fw-bold mb-3" for="globalTimeInput" data-i18n="globalTimeLabel">Set time for all rounds (minutes)</label>
+                  <label class="form-label text-info fw-bold mb-3" for="globalTimeInput" data-i18n="globalTimeLabel">Nastavit čas pro všechna kola (minuty)</label>
                   <div class="input-group">
                     <input type="number" id="globalTimeInput" class="form-control text-center bg-dark text-white" min="1" value="10" />
-                    <button id="applyGlobalTimeBtn" type="button" class="btn btn-info text-white fw-bold px-4" data-i18n="useForAll">Use for all</button>
+                    <button id="applyGlobalTimeBtn" type="button" class="btn btn-info text-white fw-bold px-4" data-i18n="useForAll">Použít pro všechna</button>
                   </div>
                 </div>
 
@@ -96,10 +98,10 @@ import Layout from '../layouts/Layout.astro';
 
             <footer id="bottom-controls" class="d-none">
               <button id="addRoundBtn" type="button" class="btn btn-outline-success">
-                ➕ <span data-i18n="addRound">Add a new round</span>
+                ➕ <span data-i18n="addRound">Přidat kolo</span>
               </button>
               <button id="addPauseBtn" type="button" class="btn btn-outline-warning">
-                ⏸️ <span data-i18n="addPause">Add a pause</span>
+                ⏸️ <span data-i18n="addPause">Přidat pauzu</span>
               </button>
             </footer>
           </div>
@@ -217,6 +219,7 @@ import Layout from '../layouts/Layout.astro';
   let wakeLock: any = null;
   let tournamentEnded = false;
   let rowUidCounter = 0; // pro unikátní id řádků (fix kolize id po smazání)
+  let globalListenersBound = false; // document-level listenery navázat jen jednou
 
   // === HELPER FUNKCE ===
   function formatTime(seconds: number): string {
@@ -251,13 +254,6 @@ import Layout from '../layouts/Layout.astro';
       wakeLock = null;
     }
   }
-
-  // Re-acquire wake lock po návratu z pozadí
-  document.addEventListener("visibilitychange", async () => {
-    if (document.visibilityState === "visible" && isTimerRunning && wakeLock === null) {
-      await requestWakeLock();
-    }
-  });
 
   // === TIMER ===
   function updateProgressBar() {
@@ -877,80 +873,6 @@ import Layout from '../layouts/Layout.astro';
     applyLanguage();
   }
 
-  // === INICIALIZACE ===
-  initLoader();
-  createBlindRounds();
-  applyLanguage();
-
-  const openFormBtn = document.getElementById("openForm");
-  const saveBlindsBtn = document.getElementById("saveBlinds");
-  const applyGlobalTimeBtn = document.getElementById("applyGlobalTimeBtn");
-  const playPauseToggle = document.getElementById("playPauseToggle");
-  const addRoundBtn = document.getElementById("addRoundBtn");
-  const addPauseBtn = document.getElementById("addPauseBtn");
-  const blindForm = document.getElementById("blindForm");
-  const bottomControls = document.getElementById("bottom-controls");
-  const resetDefaultsBtn = document.getElementById("resetDefaultsBtn");
-  const langToggleBtn = document.getElementById("langToggle");
-  const restartBtn = document.getElementById("restartTournamentBtn");
-  const fullscreenToggle = document.getElementById("fullscreenToggle");
-  const roundsContainer = document.getElementById("rounds-container");
-
-  openFormBtn?.addEventListener("click", openForm);
-  saveBlindsBtn?.addEventListener("click", saveBlinds);
-  applyGlobalTimeBtn?.addEventListener("click", applyGlobalTime);
-  playPauseToggle?.addEventListener("click", toggleTimer);
-  addRoundBtn?.addEventListener("click", addNewRound);
-  addPauseBtn?.addEventListener("click", addNewPause);
-  resetDefaultsBtn?.addEventListener("click", resetToDefaults);
-  langToggleBtn?.addEventListener("click", toggleLanguage);
-  restartBtn?.addEventListener("click", restartTournament);
-
-  // Event delegation pro tlačítka v řádcích (místo onclick atributů)
-  roundsContainer?.addEventListener("click", (e) => {
-    const target = e.target as HTMLElement;
-    if (!target) return;
-
-    // -100 / +100 tlačítka
-    if (target.classList.contains("btn-blind-decr") || target.classList.contains("btn-blind-incr")) {
-      const inputId = target.getAttribute("data-target");
-      const delta = Number(target.getAttribute("data-delta") || "0");
-      if (inputId) {
-        const input = getInput(inputId);
-        if (input) {
-          const current = Number(input.value) || 0;
-          input.value = Math.max(0, current + delta).toString();
-          input.classList.remove("is-invalid");
-        }
-      }
-    }
-
-    // Smazat řádek
-    if (target.classList.contains("btn-delete-row")) {
-      target.closest(".round-row")?.remove();
-      reindexRounds();
-      updateRoundCountDisplay();
-    }
-  });
-
-  // Při úpravě hodnoty zruš červené zvýraznění
-  roundsContainer?.addEventListener("input", (e) => {
-    const target = e.target as HTMLElement;
-    if (target && target.classList.contains("is-invalid")) {
-      target.classList.remove("is-invalid");
-    }
-  });
-
-  if (blindForm && bottomControls) {
-    blindForm.addEventListener("show.bs.modal", () => {
-      bottomControls.classList.remove("d-none");
-      clearValidation();
-    });
-    blindForm.addEventListener("hide.bs.modal", () => {
-      bottomControls.classList.add("d-none");
-    });
-  }
-
   // === FULLSCREEN ===
   function toggleFullscreen() {
     if (!document.fullscreenElement) {
@@ -960,42 +882,146 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
-  fullscreenToggle?.addEventListener("click", toggleFullscreen);
+  // Listenery na 'document' přežívají view transitions → navázat jen jednou.
+  // Prvky uvnitř hledáme "naživo", aby ukazovaly na aktuální (po navigaci vyměněnou) stránku.
+  function bindGlobalListenersOnce() {
+    if (globalListenersBound) return;
+    globalListenersBound = true;
 
-  document.addEventListener("fullscreenchange", () => {
-    const nav = document.querySelector(".main-nav") as HTMLElement;
-    if (document.fullscreenElement) {
-      if (nav) nav.style.display = "none";
-      fullscreenToggle?.classList.replace("bi-arrows-fullscreen", "bi-fullscreen-exit");
-    } else {
-      if (nav) nav.style.display = "flex";
-      fullscreenToggle?.classList.replace("bi-fullscreen-exit", "bi-arrows-fullscreen");
+    // Re-acquire wake lock po návratu z pozadí
+    document.addEventListener("visibilitychange", async () => {
+      if (document.visibilityState === "visible" && isTimerRunning && wakeLock === null) {
+        await requestWakeLock();
+      }
+    });
+
+    document.addEventListener("fullscreenchange", () => {
+      const nav = document.querySelector(".main-nav") as HTMLElement | null;
+      const fsBtn = document.getElementById("fullscreenToggle");
+      if (document.fullscreenElement) {
+        if (nav) nav.style.display = "none";
+        fsBtn?.classList.replace("bi-arrows-fullscreen", "bi-fullscreen-exit");
+      } else {
+        if (nav) nav.style.display = "flex";
+        fsBtn?.classList.replace("bi-fullscreen-exit", "bi-arrows-fullscreen");
+      }
+    });
+
+    // Mezerník = play / pauza
+    document.addEventListener("keydown", (e) => {
+      if (e.code !== "Space") return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "BUTTON") return;
+      if (document.getElementById("blindForm")?.classList.contains("show")) return;
+      e.preventDefault();
+      toggleTimer();
+    });
+  }
+
+  // === INICIALIZACE (běží při KAŽDÉ navigaci díky astro:page-load) ===
+  function init() {
+    // Stránka je po view transition nová → přechodný běhový stav resetujeme,
+    // aby návrat na /poker-timer začínal čistě (jinak listenery visí na starých prvcích).
+    if (timerInterval !== undefined) {
+      clearInterval(timerInterval);
+      timerInterval = undefined;
     }
-  });
+    releaseWakeLock();
+    isTimerRunning = false;
+    tournamentEnded = false;
+    currentRound = 0;
+    roundSecondsLeft = DEFAULT_ROUND_SECONDS;
+    totalRoundSeconds = DEFAULT_ROUND_SECONDS;
+    expectedEndTime = 0;
 
-  // === KLÁVESOVÉ ZKRATKY ===
-  document.addEventListener("keydown", (e) => {
-    if (e.code !== "Space") return;
+    initLoader();
+    createBlindRounds();
+    applyLanguage();
 
-    // Neaktivovat, pokud uživatel píše do inputu
-    const target = e.target as HTMLElement | null;
-    const tag = target?.tagName;
-    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "BUTTON") return;
+    // Reference na prvky AKTUÁLNÍ stránky (po navigaci jsou nové → vždy znovu načíst a navázat)
+    const openFormBtn = document.getElementById("openForm");
+    const saveBlindsBtn = document.getElementById("saveBlinds");
+    const applyGlobalTimeBtn = document.getElementById("applyGlobalTimeBtn");
+    const playPauseToggle = document.getElementById("playPauseToggle");
+    const addRoundBtn = document.getElementById("addRoundBtn");
+    const addPauseBtn = document.getElementById("addPauseBtn");
+    const blindForm = document.getElementById("blindForm");
+    const bottomControls = document.getElementById("bottom-controls");
+    const resetDefaultsBtn = document.getElementById("resetDefaultsBtn");
+    const langToggleBtn = document.getElementById("langToggle");
+    const restartBtn = document.getElementById("restartTournamentBtn");
+    const fullscreenToggle = document.getElementById("fullscreenToggle");
+    const roundsContainer = document.getElementById("rounds-container");
 
-    // Neaktivovat, pokud je otevřený modal
-    if (blindForm?.classList.contains("show")) return;
+    openFormBtn?.addEventListener("click", openForm);
+    saveBlindsBtn?.addEventListener("click", saveBlinds);
+    applyGlobalTimeBtn?.addEventListener("click", applyGlobalTime);
+    playPauseToggle?.addEventListener("click", toggleTimer);
+    addRoundBtn?.addEventListener("click", addNewRound);
+    addPauseBtn?.addEventListener("click", addNewPause);
+    resetDefaultsBtn?.addEventListener("click", resetToDefaults);
+    langToggleBtn?.addEventListener("click", toggleLanguage);
+    restartBtn?.addEventListener("click", restartTournament);
+    fullscreenToggle?.addEventListener("click", toggleFullscreen);
 
-    e.preventDefault();
-    toggleTimer();
-  });
+    // Event delegation pro tlačítka v řádcích (místo onclick atributů)
+    roundsContainer?.addEventListener("click", (e) => {
+      const target = e.target as HTMLElement;
+      if (!target) return;
 
-  const clockElement = document.getElementById("clock");
-  if (clockElement) clockElement.textContent = formatTime(DEFAULT_ROUND_SECONDS);
+      if (target.classList.contains("btn-blind-decr") || target.classList.contains("btn-blind-incr")) {
+        const inputId = target.getAttribute("data-target");
+        const delta = Number(target.getAttribute("data-delta") || "0");
+        if (inputId) {
+          const input = getInput(inputId);
+          if (input) {
+            const current = Number(input.value) || 0;
+            input.value = Math.max(0, current + delta).toString();
+            input.classList.remove("is-invalid");
+          }
+        }
+      }
+
+      if (target.classList.contains("btn-delete-row")) {
+        target.closest(".round-row")?.remove();
+        reindexRounds();
+        updateRoundCountDisplay();
+      }
+    });
+
+    // Při úpravě hodnoty zruš červené zvýraznění
+    roundsContainer?.addEventListener("input", (e) => {
+      const target = e.target as HTMLElement;
+      if (target && target.classList.contains("is-invalid")) {
+        target.classList.remove("is-invalid");
+      }
+    });
+
+    if (blindForm && bottomControls) {
+      blindForm.addEventListener("show.bs.modal", () => {
+        bottomControls.classList.remove("d-none");
+        clearValidation();
+      });
+      blindForm.addEventListener("hide.bs.modal", () => {
+        bottomControls.classList.add("d-none");
+      });
+    }
+
+    // Hodiny ukážou čas prvního kola (po createBlindRounds → applyLanguage → setRound(0))
+    const clockElement = document.getElementById("clock");
+    if (clockElement) clockElement.textContent = formatTime(roundSecondsLeft);
+
+    // document-level listenery navázat jen jednou
+    bindGlobalListenersOnce();
+  }
+
+  document.addEventListener("astro:page-load", init);
 </script>
 
 <style is:global>
   html, body {
-    background-color: #1a1a1a !important;
+    background-color: #0a0a0a !important;
     margin: 0;
     padding: 0;
     width: 100%;
@@ -1009,7 +1035,7 @@ import Layout from '../layouts/Layout.astro';
     left: 0;
     width: 100%;            /* místo 100vw – nepřetéká kvůli scrollbaru */
     min-height: 100vh;
-    background-color: #1a1a1a;
+    background-color: #0a0a0a;
     color: #e0e0e0;
     font-family: 'Inter', sans-serif;
     display: flex;
@@ -1092,7 +1118,7 @@ import Layout from '../layouts/Layout.astro';
     display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at center, rgba(13,110,253,0.15) 0%, #1a1a1a 70%);
+    background: radial-gradient(circle at center, rgba(13,110,253,0.15) 0%, #0a0a0a 70%);
     z-index: 50;
   }
 
@@ -1427,7 +1453,7 @@ import Layout from '../layouts/Layout.astro';
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: #1a1a1a;
+    background-color: #0a0a0a;
     display: flex;
     align-items: center;
     justify-content: center;
